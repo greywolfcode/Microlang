@@ -1,0 +1,13 @@
+#assign float
+make flt x = 4
+#assing string
+make str x = 'Hello, World!'
+#assign boolean
+make bool x = True
+make bool x = False
+#make array
+make array x = { 5 , True , 'Hi' , { 'Array' } }
+#assign from another variable
+make var y = x
+#for big scripts, it is reccomended to free variables to save memory
+free x

@@ -1,0 +1,6 @@
+#set variable
+make str x = '45'
+#change to string
+make flt y = [ x , flt ]
+#change to flt
+make str z = [ y , str ]

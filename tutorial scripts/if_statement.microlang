@@ -1,0 +1,20 @@
+make flt x = 1
+#if statements
+if x == 2 then
+{
+    display True
+    display 'hi'
+}
+elif x <= 4 then
+{
+    display 5 + 4
+    display 7
+}
+elif x >= 5 then
+{
+    display 6
+}
+else
+{
+    display False
+}

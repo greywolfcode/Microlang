@@ -1,0 +1,10 @@
+#for loop. Stops one before the stopping value
+for x = 0 , 10 do
+{
+    display x
+}
+#can provide a step value to iterate by
+for x = 0 , 10 , 2 do
+{
+    display x
+}
