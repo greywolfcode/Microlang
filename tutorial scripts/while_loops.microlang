@@ -1,0 +1,8 @@
+#assign variable
+make flt x  = 0
+#while loop
+while x <= 8 do
+{
+    display x
+    make flt x = x + 1
+}

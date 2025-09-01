@@ -1,0 +1,6 @@
+make str x = input 'Give number here: '
+display x
+make flt y = [ x , flt ]
+display y
+make str z = [ y , get ]
+display z

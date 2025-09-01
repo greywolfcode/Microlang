@@ -1,0 +1,24 @@
+#get seed number and show it
+make str y = input 'Give Number here: '
+make flt x = [ y , flt ]
+display x
+#start count at zero 
+make flt count = 0
+#main while loop
+while x > 1 do
+{
+    make flt d_by_two = x % 2
+    if d_by_two == 0 then
+    {
+        make flt x = x / 2
+    }
+    else
+    {
+        make flt x = ( 3 * x ) + 1
+    }
+    display x
+    make flt count = count + 1
+}
+#display stopping time
+display 'Stopping time: '
+display count

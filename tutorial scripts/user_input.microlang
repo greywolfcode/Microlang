@@ -1,0 +1,6 @@
+#get user input
+make str x = input 'Give input here: '
+display x
+#string for input is not required
+make str y = input
+display y
