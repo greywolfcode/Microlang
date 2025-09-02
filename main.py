@@ -1,11 +1,12 @@
 #TODO:
-#fix all remaining bugs
+#fix all remaining bugs :)
 #make error correction code point to the correct spot in the input string
 #add for loops: for STATEMENT then STATEMENT
 #add iterating through arrays to for loop
 #add functions: func NAME [ ARGS ] STATEMENT
 #add classes: class NAME [ PARENTS ] FUNCTIONS 
-#make changers work
+#make run_func work
+#add error messages if run_func does not work
 #raise error in parser if elif/else do not have a parent
 
 #import libraries

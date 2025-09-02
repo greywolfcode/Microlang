@@ -77,15 +77,17 @@ def convert_array_tokens(array):
                 else:
                     modified_array[num] = variables[token.token].value
         #make booleans look correct
-        #'''
         elif token.token_type == 'bool':
             if token.token == 'True':
                 modified_array[num] = True
             elif token.token == 'False':
-                modified_array[num] = False#'''
+                modified_array[num] = False
         else:
             modified_array[num] = token.token
-    return modified_array
+        string_array = str(modified_array)
+        #replace 1st and last charchter of string with proper brackets
+        string_array = '{' + string_array[1:-1] + '}'
+    return string_array
 #interpreter function
 def interpreter(syntax_tree, console_index, input_string):
     #get all console variables
@@ -163,10 +165,10 @@ def interpreter(syntax_tree, console_index, input_string):
         right = get_token(comp.right)
         comp_op = comp.comp_op.token
         return eval(f'{left} {comp_op} {right}')
-    def interpret_changer(element):
+    def run_func(element):
         #convert inner changers to new type first
         if element.value.type == 'changer':
-            new_value = interpret_changer(element.value)
+            new_value = run_func(element.value)
             element.value = new_value
         #only strings and arrays can have numerical outputs, check for that first
         if element.output.token_type == 'flt':
@@ -369,7 +371,7 @@ def interpreter(syntax_tree, console_index, input_string):
                         elif element.output.token == 'array':
                             return Token([var_value], 'array')
                         else:
-                            print(f'[Out_{console_index}]: Type Error: Could not convert float to {element.output}')
+                            print(f'[Out_{console_index}]: Type Error: Could not convert float to {element.output.token}')
                             out_length = len(f'[Out_{console_index}]: ')
                             print(' ' * out_length + input_string)
                             print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token)) 
@@ -451,7 +453,7 @@ def interpreter(syntax_tree, console_index, input_string):
         print(statement)
         if statement.type == 'changer':
             #get output
-            output = interpret_changer(element.value)
+            output = run_func(element.value)
             print(f'[Out_{console_index}]: {output.token}')
             print('')
         elif statement.type == 'equation':
@@ -517,7 +519,7 @@ def interpreter(syntax_tree, console_index, input_string):
                 raise Interpreter_Error('')
         elif element.value.type == 'changer':
             #get changer token
-            value = interpret_changer(element.value)
+            value = run_func(element.value)
             if value.token_type == element.var_type.token:
                 #no longer need the token stuff in variable class
                 variables[element.var.token] = Variable(element.var_type.token, value.token)
@@ -668,288 +670,47 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 output_stack.append(Token(new_value, 'flt'))
         #return final value
         return output_stack[0]
-    def interpret_changer(element):
-        #convert inner changers to new type first
-        if element.value.type == 'changer':
-            new_value = interpret_changer(element.value)
-            element.value = new_value
-        #only strings and arrays can have numerical outputs, check for that first
-        if element.output.token_type == 'flt':
-            #check if input is proper type
-            if element.value.token_type == 'var':
-                #check if variable exists
-                if element.value.token in set(variables.keys()):
-                    #check if variable is the right type
-                    var_value = variables[element.value.token].value
-                    if variables[element.value.token].type == 'str':
-                        try:
-                            #get value from array
-                            #arrays contain token objects
-                            value = var_value[int(element.output.token)]
-                            return Token(value, 'str')
-                        except IndexError:
-                            print(f'[Out_{console_index}]: Index Error: Array index out of range')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                        except ValueError:
-                            print(f'[Out_{console_index}]: Index Error: Array index must be a whole number')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                    elif variables[element.value.token].type == 'array':
-                        try:
-                            #get value from array
-                            #arrays contain token objects
-                            value = var_value[int(element.output.token)]
-                            return Token(value.token, value.token_type)
-                        except IndexError:
-                            print(f'[Out_{console_index}]: Index Error: Array index out of range')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                        except ValueError:
-                            print(f'[Out_{console_index}]: Index Error: Array index must be a whole number')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                    else:
-                        print(f'[Out_{console_index}]: Type Error: {variables[element.value.token].token} is not an acceptable type ({variables[element.value.token].token_type})')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                        raise Interpreter_Error('')
-                else:
-                    print(f'[Out_{console_index}]: Name Error: {element.value.token} does not exist')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-            elif element.value.token_type == 'str':
-                try:
-                    #get value from array
-                    #arrays contain token objects
-                    value = element.value.token[int(element.output.token)]
-                    return Token(value, 'str')
-                except IndexError:
-                    print(f'[Out_{console_index}]: Index Error: Array index out of range')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-                except ValueError:
-                    print(f'[Out_{console_index}]: Index Error: Array index must be a whole number')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-            elif element.value.token_type =='array':
-                try:
-                    #get value from array
-                    #arrays contain token objects
-                    value = element.value.token[int(element.output.token)]
-                    return Token(value.token, value.token_type)
-                except IndexError:
-                    print(f'[Out_{console_index}]: Index Error: Array index out of range')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-                except ValueError:
-                    print(f'[Out_{console_index}]: Index Error: Array index must be a whole number')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-            else:
-                print(f'[Out_{console_index}]: Type Error: {element.value.token} is not an acceptable type ({element.value.token_type})')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                raise Interpreter_Error('')
-        #check for keyword type
-        elif element.output.token_type == 'keyword':
-            #get input type
-            if element.output.token == 'get':
-                if element.value.token_type == 'var':
-                    #check if variable exists
-                    if element.value.token in set(variables.keys()):
-                        return Token(variables[element.value.token].type, 'str')
-                    else:
-                        print(f'[Out_{console_index}]: Name Error: {element.value.token} does not exist')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                        raise Interpreter_Error('')
-                else:
-                    return Token(element.value.token_type, 'str')
-            #get input length
-            elif element.output.token == 'len':
-                if element.value.token_type == 'var':
-                    #check if variable exists
-                    if element.value.token in set(variables.keys()):
-                        #only str and array can have lengths
-                        if variables[element.value.token].type in {'str', 'array'}:
-                            return Token(len(variables[element.value.token].token), 'flt')
-                        else:
-                            print(f'[Out_{console_index}]: Type Error: Element of type {variables[element.value.token].type} does not have a length')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                    else:
-                        print(f'[Out_{console_index}]: Name Error: {element.value.token} does not exist')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                        raise Interpreter_Error('')
-                else:
-                    #only str and array can have lengths
-                    if element.value.token_type in {'str', 'array'}:
-                        return Token(len(element.value.token), 'flt')
-                    else:
-                        print(f'[Out_{console_index}]: Type Error: Element of type {element.value.token_type} does not have a length')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                        raise Interpreter_Error('')
-        #this code changes the type of the object
-        else:
-            #check if input is a variable
-            if element.value.token_type == 'var':
-                #check if variable exists
-                if element.value.token in set(variables.keys()):
-                    #make sure variable is the right type
-                    var_value = variables[element.value.token]
-                    if variables[element.value.token].type == 'str':
-                        if element.output.token == 'flt':
-                            #use regex to check if the string can be converted to a float
-                            float_reg = re.compile(r'^[0-9.-]+$')
-                            if float_reg.search(var_value.value):
-                                value = eval(f'{float(var_value.value)}')
-                                return Token(value, 'flt')
-                            else:
-                                print(f'[Out_{console_index}]: Value Error: Could not convert string ({var_value}) to float')
-                                out_length = len(f'[Out_{console_index}]: ')
-                                print(' ' * out_length + input_string)
-                                print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                                raise Interpreter_Error('')
-                        elif element.output.token == 'str':
-                            return var_value
-                        elif element.output.token == 'array':
-                            return Token([var_value], 'array')
-                        else:
-                            print(f'[Out_{console_index}]: Type Error: Could not convert string to {element.output}')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                    #convert arrays
-                    elif variables[element.value.token].type == 'array':
-                        if element.output.token == 'flt':
-                            print(f'[Out_{console_index}]: Type Error: array cannot become float')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                        elif element.output.token == 'str':
-                            return Token(convert_array_tokens(var_value.value), 'str')
-                        elif element.output.token == 'array':
-                            return Token([var_value], 'array')
-                        else:
-                            print(f'[Out_{console_index}]: Type Error: Could not convert array to {element.output}')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                            raise Interpreter_Error('')
-                    elif variables[element.value.token].type == 'flt':
-                        if element.output.token == 'flt':
-                            return Token(var_value.value, 'flt')
-                        elif element.output.token == 'str':
-                            return Token(str(var_value.value), 'str')
-                        elif element.output.token == 'array':
-                            return Token([var_value], 'array')
-                        else:
-                            print(f'[Out_{console_index}]: Type Error: Could not convert float to {element.output}')
-                            out_length = len(f'[Out_{console_index}]: ')
-                            print(' ' * out_length + input_string)
-                            print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token)) 
-                            raise Interpreter_Error('')
-                    else:
-                        print(f'[Out_{console_index}]: Type Error: {element.value.token} is not an acceptable type ({variables[element.value.token].type})')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                        raise Interpreter_Error('')
-                else:
-                    print(f'[Out_{console_index}]: Name Error: {element.value.token} does not exist')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-            elif element.value.token_type == 'str':
-                if element.output.token == 'flt':
-                    #use regex to check if the string can be converted to a float
-                    float_reg = re.compile(r'^[0-9.-]+$')
-                    if float_reg.search(element.value.token):
-                        value = eval(f'{float(element.value.token)}')
+    def run_func(element):
+        #changing types
+        if element.output.token_type == 'type':
+            if element.output.token == 'flt':
+                #can only convert strings to floats
+                if element.value.token_type == 'str':
+                    try:
+                        value = float(element.value.token)
                         return Token(value, 'flt')
-                    else:
-                        print(f'[Out_{console_index}]: Value Error: Could not convert string ({var_value}) to float')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                        raise Interpreter_Error('')
-                elif element.output.token == 'str':
-                    return Token(element.value.token, element.value.token_type)
-                elif element.output.token == 'array':
-                    return Token([element.value], 'array')
+                    except:
+                        #raise error
+                        pass
+                elif element.value.token_type == 'var':
+                    #chack if variable exists
+                    if element.value.token in set(variables.keys()):
+                        try:
+                            value = float(variables[element.value.token].value)
+                            return Token(value, 'flt')
+                        except:
+                            #raise error
+                            pass
+            elif element.output.token == 'str':
+                if element.value.token_type == 'var':
+                    if element.value.token in set(variables.keys()):
+                        try:
+                            value = str(variables[element.value.token].value)
+                            return Token(value, 'str')
+                        except:
+                            #raise error
+                            pass
+                #arrays need to be formated correctly so they look correct
+                elif element.value.token_type == 'array':
+                    value = convert_array_tokens(a)
+                    return Token(value, 'str')
                 else:
-                    print(f'[Out_{console_index}]: Type Error: Could not convert string to {element.output.token}')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-            elif element.value.token_type =='array':
-                if element.output.token == 'flt':
-                    print(f'[Out_{console_index}]: Type Error: array cannot become float')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise SyntaxError
-                elif element.output.token == 'str':
-                    return Token(convert_array_tokens(element.value), 'str')
-                elif element.output.token == 'array':
-                    return Token([element.value], 'array')
-                else:
-                    print(f'[Out_{console_index}]: Type Error: Could not convert array to {element.output.token}')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                    raise Interpreter_Error('')
-            elif element.value.token_type == 'flt':
-                if element.output.token == 'flt':
-                    return element.value
-                elif element.output.token == 'str':
-                    return Token(str(element.value.token), 'str')
-                elif element.output.token == 'array':
-                    return Token([element.value], 'array')
-                else:
-                    print(f'[Out_{console_index}]: Type Error: Could not convert float to {element.output.token}')
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token)) 
-                    raise Interpreter_Error('')
-            else:
-                print(f'[Out_{console_index}]: Type Error: {element.value.token} is not an acceptable type ({element.value.token_type})')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                raise Interpreter_Error('')
+                    try:
+                        value = str(element.value.token)
+                        return Token(value, 'str')
+                    except:
+                        #raise error
+                        pass
     def interpret_comp(comp):
         '''Return boolean value of a Comparison'''
         def get_token(token):
@@ -1004,9 +765,9 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 print(' ' * out_length + input_string)
                 print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
                 raise Interpreter_Error('')
-        elif element.value.type == 'changer':
+        elif element.value.type == 'run_func':
             #get changer token
-            value = interpret_changer(element.value)
+            value = run_func(element.value)
             if value.token_type == element.var_type.token:
                 #no longer need the token stuff in variable class
                 variables[element.var.token] = Variable(element.var_type.token, value.token)
@@ -1049,9 +810,9 @@ def file_interpreter(syntax_tree, console_index, input_string):
     def output_display(element):
         nonlocal variables
         statement = element.value
-        if statement.type == 'changer':
+        if statement.type == 'run_func':
             #get output
-            output = interpret_changer(element.value)
+            output = run_func(element.value)
             print(output.token)
         elif statement.type == 'equation':
             #solve equation
@@ -1063,11 +824,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #make arrays look good
                 if variables[statement.token].type == 'array':
                     array_value = convert_array_tokens(variables[statement.token].value)
-                    #convert array to array_string
-                    print_array = str(array_value)
-                    #convert brackets to ones used by the console syntax
-                    print_array = print_array.replace('[', '{')
-                    print_array = print_array.replace(']', '}')
+                    print_array = converted_array_to_string(array_value)
                     #print the array
                     print(print_array)
                 else:
@@ -1079,15 +836,8 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 print(' ' * out_length + ' ' * (statement.location - len(statement.token)) + '^' * len(statement.token))
                 raise Interpreter_Error('')
         elif statement.token_type == 'array':
-            #requires deepcopy so that  multi d (i.e. 2d, 3d) arrays won't break to to modification for printing
-            print_array = copy.deepcopy(statement.token)
             #convert all inside tokens to human readable charachters
-            print_array = convert_array_tokens(print_array)
-            #convert array to array_string
-            print_array = str(print_array)
-            #convert brackets to ones used by the console syntax
-            print_array = print_array.replace('[', '{')
-            print_array = print_array.replace(']', '}')
+            print_array = convert_array_tokens(statement.token)
             #print the array
             print(print_array)
         else:

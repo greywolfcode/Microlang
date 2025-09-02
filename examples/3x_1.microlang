@@ -1,6 +1,6 @@
 #get seed number and show it
 make str y = input 'Give Number here: '
-make flt x = [ y , flt ]
+make flt x = flt [ y ]
 display x
 #start count at zero 
 make flt count = 0

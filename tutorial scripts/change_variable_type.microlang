@@ -1,6 +1,8 @@
 #set variable
 make str x = '45'
 #change to string
-make flt y = [ x , flt ]
+make flt y = flt [ x ]
 #change to flt
-make str z = [ y , str ]
+make str z = str [ y ]
+#change to array
+make array q = array [ z ]
