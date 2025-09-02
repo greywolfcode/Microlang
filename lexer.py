@@ -134,7 +134,7 @@ def file_lexer(input_string, console_index):
     def add_token(token, index):
         #adds token to current row, as that will be the last one added
         nonlocal tokens, line
-        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'get', 'len', 'free', 'input', 'while', 'for', 'do'}
+        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'do'}
         types = {'flt', 'str', 'array', 'var', 'bool'}
         booleans = {'True', 'False'}
         #token is a string if there has been an even number of quotes found

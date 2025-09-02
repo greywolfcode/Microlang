@@ -1,6 +1,8 @@
 make str x = input 'Give number here: '
 display x
-make flt y = [ x , flt ]
+make flt y = flt [ x ]
 display y
-make str z = [ y , get ]
+make str z = str [ { 7 , 0 } ]
+display z
+make array q = array [ z ]
 display z

@@ -58,6 +58,11 @@ class Changer():
         self.value = value
         self.output = output
         self.type = 'changer'
+class Run_Func():
+    def __init__(self, value, output):
+        self.value = value
+        self.output = output
+        self.type = 'run_func'
 class Comparison():
     def __init__(self, left, comp, right):
         self.left = left
@@ -1071,9 +1076,18 @@ def file_parser(tokens, console_index, input_string):
             #check for {
             expect('{', console_index)
             value = create_array()
-        #check if changer is being used. Interpreter will do type check
-        elif accept_token('['):
-            value = create_changer()
+        #allow to get user input set to a variable. This will always be a string, and should be set as so
+        elif accept_token('input') and var_type.token == 'str':
+            if check_line_end():
+                if accept_type('str'):
+                    value = Input(string=expect_type('str', console_index))
+                else:
+                    value = Input()
+            else:
+                value = Input()
+        #check if a function is being run
+        elif accept_type('type'):
+            value = create_run_func()
         #allow setting variables to equal comparisons
         elif var_type.token == 'bool':
             if accept_token('('):
@@ -1113,15 +1127,6 @@ def file_parser(tokens, console_index, input_string):
                     #checking for bracketed equation doesn't push up index but should
                     current_index += 1
                     value = expect_type(var_type.token, console_index)
-        #allow to get user input set to a variable. This will always be a string, and should be set as so
-        elif accept_token('input') and var_type.token == 'str':
-            if check_line_end():
-                if accept_type('str'):
-                    value = Input(string=expect_type('str', console_index))
-                else:
-                    value = Input()
-            else:
-                value = Input()
         else:
             #check for right type if not array or equation
             value = expect_type(var_type.token, console_index)
@@ -1155,24 +1160,22 @@ def file_parser(tokens, console_index, input_string):
             #check for comma seperator
             expect(',', console_index)
         return Token(array, 'array')
-    def create_changer():
+    def create_run_func():
         '''Create Changer Object'''
         nonlocal current_index
-        #look for input 
+        #custom function
         if accept_type('var'):
-            value = tokens[line][current_index]
+            pass
+        #change type of variable
+        elif accept_type('type'):
+            output = expect_type('type', console_index)
+        #functions on variables
+        elif accept_token('len'):
+            output = tokens[line][current_index - 1]
             current_index += 1
-        elif accept_type('flt'):
-            value = tokens[line][current_index]
-            current_index += 1
-        elif accept_type('str'):
-            value = tokens[line][current_index]
-            current_index += 1
-        elif accept_token('{'):
-            value = create_array()
-            current_index += 1
-        elif accept_token('['):
-            value = create_changer()
+        #get type of variable
+        elif accept_token('type'):
+            output = tokens[line][current_index - 1]
             current_index += 1
         else:
             print(f'[Out_{console_index}]: Type Error: {tokens[line][current_index].token} is not a valid type to be converted')
@@ -1180,24 +1183,19 @@ def file_parser(tokens, console_index, input_string):
             print(' ' * out_length + input_string)
             print(' ' * out_length + ' ' * (tokens[line][current_index].location - len(tokens[current_index].token)) + '^' * len(tokens[line][current_index].token))
             raise Parser_Error('')
-        #check for seperator comma
-        expect(',', console_index)
+        #check for [
+        expect('[', console_index)
         #get what output should be
-        #check for flt for string splicing/getting value from array
-        if accept_type('flt'):
-            output = tokens[line][current_index]
-        elif accept_type('keyword'):
-            #only get or len keywords are allowed
-            if accept_token('get'):
-                output = tokens[line][current_index]
-            elif accept_token('len'):
-                output = tokens[line][current_index]
-            else:
-                print(f'[Out_{console_index}]: Syntax Error: Expected get or len')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (tokens[line][current_index].location - len(tokens[current_index].token)) + '^' * len(tokens[line][current_index].token))
-                raise Parser_Error('')
+        if accept_type('var'):
+            value = expect_type('var', console_index)
+        elif accept_type('str'):
+            value = expect_type('str',console_index)
+        elif accept_token('{'):
+            value = create_array()
+        elif accept_type('flt'):
+            value = expect_type('flt', console_index)
+        elif accept_type('bool'):
+            value = expect_type('bool', console_index)
         else:
             output = expect_type('type', console_index)
             #make sure output is not var type - can't convert to variable type 
@@ -1208,7 +1206,7 @@ def file_parser(tokens, console_index, input_string):
                 print(' ' * out_length + ' ' * (tokens[line][current_index].location - len(tokens[line][current_index].token)) + '^' * len(tokens[line][current_index].token))
                 raise Parser_Error('')
         expect(']', console_index)
-        return Changer(value, output)
+        return Run_Func(value, output)
     def create_free():
         return expect_type('var', console_index)
     def create_for():
