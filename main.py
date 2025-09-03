@@ -3,13 +3,15 @@
 #make error correction code point to the correct spot in the input string
 #add for loops: for STATEMENT then STATEMENT
 #add iterating through arrays to for loop
-#add functions: func NAME [ ARGS ] STATEMENT
 #add classes: class NAME [ PARENTS ] FUNCTIONS 
-#make run_func work
-#add error messages if run_func does not work
 #raise error in parser if elif/else do not have a parent
+#make function to run functions
+#make function return current variable scope to parent scope after completion
+#replace variable instances with new tree variable system
+#add importing microlang files with: import FILENAME
+#add opening files with: open FILEPATH {}
 
-#import libraries
+#import standerd libraries
 import traceback
 #import files
 import lexer

@@ -31,6 +31,12 @@ class Else_Statment():
         self.statement = statement
         self.parent = parent
         self.type = 'else'
+class Function():
+    def __init__(self, name, args, statement):
+        self.name = name
+        self.args = args
+        self.statement = statement
+        self.type = 'function'
 class While_Loop():
     def __init__(self, comparison, statement):
         self.comparison = comparison
@@ -704,7 +710,6 @@ def parser(tokens, console_index, input_string):
     return syntax_tree
 #main parser function for files
 def file_parser(tokens, console_index, input_string):
-    
     def braketed_expression():
         '''Checks what type of brackated expression it is'''
         #first check if there is just a float next 
@@ -1071,13 +1076,8 @@ def file_parser(tokens, console_index, input_string):
         var_type = expect_type('type', console_index)
         var_name = expect_type('var', console_index)
         expect('=', console_index)
-        #arrays need to be parsed
-        if var_type.token == 'array':
-            #check for {
-            expect('{', console_index)
-            value = create_array()
         #allow to get user input set to a variable. This will always be a string, and should be set as so
-        elif accept_token('input') and var_type.token == 'str':
+        if accept_token('input') and var_type.token == 'str':
             if check_line_end():
                 if accept_type('str'):
                     value = Input(string=expect_type('str', console_index))
@@ -1086,28 +1086,13 @@ def file_parser(tokens, console_index, input_string):
             else:
                 value = Input()
         #check if a function is being run
-        elif accept_type('type'):
+        elif accept_type('type') or accept_type('keyword'):
             value = create_run_func()
-        #allow setting variables to equal comparisons
-        elif var_type.token == 'bool':
-            if accept_token('('):
-                current_index -= 1
-                if braketed_expression() == 'comparison':
-                    #current_index += 1
-                    value = arrange_comps()
-                else:
-                    current_index += 1
-                    #this will throw an error because there is no comparison
-                    value = expect_type(var_type.token, console_index)
-            else:
-                current_index -= 1
-                if braketed_expression() == 'comparison':
-                    #current_index += 1
-                    value = arrange_comps()
-                else:
-                    #checking for bracketed comparison doesn't push up index but should
-                    current_index += 1
-                    value = expect_type(var_type.token, console_index)
+        #arrays need to be parsed
+        elif var_type.token == 'array':
+            #check for {
+            expect('{', console_index)
+            value = create_array()
         #allows equations to be used as input
         elif var_type.token == 'flt':
             if accept_token('('):
@@ -1172,11 +1157,9 @@ def file_parser(tokens, console_index, input_string):
         #functions on variables
         elif accept_token('len'):
             output = tokens[line][current_index - 1]
-            current_index += 1
         #get type of variable
         elif accept_token('type'):
             output = tokens[line][current_index - 1]
-            current_index += 1
         else:
             print(f'[Out_{console_index}]: Type Error: {tokens[line][current_index].token} is not a valid type to be converted')
             out_length = len(f'[Out_{console_index}]: ')
@@ -1234,6 +1217,19 @@ def file_parser(tokens, console_index, input_string):
                 step = int(expect_type('flt', console_index).token)
             values = [start, stop, step]
         return var, for_type, values
+    def create_func():
+        nonlocal current_index
+        name = expect_token('var', console_index)
+        expect('[', console_index)
+        #break if no arguments
+        args = []
+        while not accept_token(']'):
+            arg_type = expect_type('type', console_index)
+            arg_name = expect_type('var', console_index)
+            if accept_token(']'):
+                break
+            else:
+                expect(',', console_index)
     #return boolean if next token is the same as inputed token
     def accept_token(token):
         '''returns boolean if next token is given token'''
@@ -1373,6 +1369,20 @@ def file_parser(tokens, console_index, input_string):
             if accept_token('make'):
                 var_type, var, value = create_make()
                 return Make_Statment(var_type, var, value)
+            #create function
+            elif accept_token('func'):
+                #get name and args
+                name, args = create_func()
+                #prep to make block statement
+                change_line_end()
+                expect('{')
+                change_line_end()
+                st = []
+                #loop until closing } is found
+                while not accept_token('}'):
+                    st.appejnd(statement())
+                    change_line_end()
+                return Function(name, args, st)
             #create while loop
             elif accept_token('while'):
                 comp = arrange_comps()

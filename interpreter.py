@@ -1,4 +1,4 @@
-#import libraries
+#import standerd libraries
 import copy
 import re
 #define custom exception to call
@@ -52,6 +52,26 @@ class Make_Statment():
         self.var = var
         self.value = value
         self.type = 'make'
+#define class structure for variable scope tree
+class Node():
+    def __init__(self, parent):
+        #stor dictionary of variables
+        self.variables = {}
+        #store parent scope
+        self.parent = parent
+def search_vars(current_scope, variable):
+    '''Get a variable moving up the scope tree '''
+    #check if variable is in local scope
+    if variable in set(current_scope.variables.keys()):
+        #using lists for a mutable data type, so have to get 1st item in the list
+        return current_scope.variables[variable][0]
+    #check if there is no parent
+    elif current_scope.parent == None:
+        #variable does not exist - raise error
+        pass
+    #search parent scope for variable
+    else:
+        return search_vars(current_scope.parent, variable)
 #function to make arrays able to be displayed; outside interpreter function for displaying all variables
 def convert_array_tokens(array):
     #deep copy array so editing it or inside arrays will not effect the actual array 
@@ -639,6 +659,10 @@ def interpreter(syntax_tree, console_index, input_string):
 #interpreter function for files
 def file_interpreter(syntax_tree, console_index, input_string):
     variables = {}
+    #create global variables node, which has no parent
+    global_vars = Node(None)
+    #define current scope
+    current_scope = global_vars
     def interpret_equation(postfix):
         '''Interpret and Calulate Postfix Expressions'''
         output_stack = []
@@ -694,15 +718,20 @@ def file_interpreter(syntax_tree, console_index, input_string):
             elif element.output.token == 'str':
                 if element.value.token_type == 'var':
                     if element.value.token in set(variables.keys()):
-                        try:
-                            value = str(variables[element.value.token].value)
+                        #check if variable is an array
+                        if variables[element.value.token].type == 'array':
+                            value = convert_array_tokens(variables[element.value.token].value)
                             return Token(value, 'str')
-                        except:
-                            #raise error
-                            pass
+                        else:
+                            try:
+                                value = str(variables[element.value.token].value)
+                                return Token(value, 'str')
+                            except:
+                                #raise error
+                                pass
                 #arrays need to be formated correctly so they look correct
                 elif element.value.token_type == 'array':
-                    value = convert_array_tokens(a)
+                    value = convert_array_tokens(element.value.token)
                     return Token(value, 'str')
                 else:
                     try:
@@ -711,6 +740,46 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     except:
                         #raise error
                         pass
+            elif element.output.token == 'array':
+                #check for variables
+                if element.value.token_type == 'var':
+                    if element.value.token in set(variables.keys()):
+                        value = Token(variables[element.value.token].value, variables[element.value.token].type)
+                        return Token([value], 'array')
+                    else:
+                        #raise error
+                        pass
+                else:
+                    return Token([element.value], 'array')
+        elif element.output.token_type == 'keyword':
+            #get type of variable
+            if element.output.token == 'type':
+                if element.value.token_type == 'var':
+                    if element.value.token in set(variables.keys()):
+                        value = variables[element.value.token].type
+                        return Token(value, 'str')
+                    else:
+                        #raise error
+                        pass
+                else:
+                    return Token(element.value.token_type, 'str')
+            #get length of variable
+            elif element.output.token == 'len':
+                if element.value.token_type == 'var':
+                    if element.value.token in set(variables.keys()):
+                        value = variables[element.value.token]
+                        #only arrays and strings have a length
+                        if value.type in {'array', 'str'}:
+                            return Token(len(value.value), 'flt')
+                        else:
+                            #raise error
+                            pass
+                    else:
+                        #raise error
+                        pass
+                else:
+                    if element.value.type in {'array', 'str'}:
+                        return Token(len(element.value.token), 'flt')
     def interpret_comp(comp):
         '''Return boolean value of a Comparison'''
         def get_token(token):
@@ -823,8 +892,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
             if statement.token in set(variables.keys()):
                 #make arrays look good
                 if variables[statement.token].type == 'array':
-                    array_value = convert_array_tokens(variables[statement.token].value)
-                    print_array = converted_array_to_string(array_value)
+                    print_array = convert_array_tokens(variables[statement.token].value)
                     #print the array
                     print(print_array)
                 else:
