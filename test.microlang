@@ -1,8 +1,8 @@
-make str x = input 'Give number here: '
-display x
-make flt y = flt [ x ]
-display y
-make str z = str [ { 7 , 0 } ]
-display z
-make array q = array [ z ]
-display z
+func hello [ flt f , flt j ]
+{
+    display f
+    display g
+    return f + g
+}
+
+hello [ 5 , 6 ]
