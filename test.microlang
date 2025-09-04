@@ -2,7 +2,8 @@ func hello [ flt f , flt j ]
 {
     display f
     display g
-    return f + g
+    make flt c = f + g
+    return c
 }
 
 hello [ 5 , 6 ]

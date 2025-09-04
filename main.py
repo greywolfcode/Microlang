@@ -10,6 +10,7 @@
 #replace variable instances with new tree variable system
 #add importing microlang files with: import FILENAME
 #add opening files with: open FILEPATH {}
+#add break command for loops
 
 #import standerd libraries
 import traceback
