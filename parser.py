@@ -4,29 +4,37 @@ class Parser_Error(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
+#token class
+class Token():
+    def __init__(self, token, token_type):
+        self.token = token
+        self.token_type = token_type
+        self.type = 'token'
+    def print_vars(self):
+        print(self.token, self.token_type, self.location)
 #class to make if cache work better
 class If_Block():
     def __init__(self):
         self.type = 'if_block'
 #classes for output elements
-class If_Statment():
+class If_statement():
     def __init__(self, comparison, statement):
         self.comparison = comparison 
         self.statement = statement
         self.true = False
         self.type = 'if'
-class Elif_Statment():
+class Elif_statement():
     def __init__(self, comparison, statement, parent):
         self.comparison = comparison 
         self.statement = statement
         self.parent = parent
         self.true = False
         self.type = 'elif'
-class Then_Statment():
+class Then_statement():
     def __init__ (self, statement):
         self.statement = statement
         self.type = 'then'
-class Else_Statment():
+class Else_statement():
     def __init__ (self, statement, parent):
         self.statement = statement
         self.parent = parent
@@ -49,11 +57,11 @@ class For_Loop():
         self.values = values
         self.statement = statement
         self.type = 'for'
-class Free_Statment():
+class Free_statement():
     def __init__ (self, var):
         self.var = var
         self.type = 'free'
-class Make_Statment():
+class Make_statement():
     def __init__ (self, var_type, var, value):
         self.var_type = var_type
         self.var = var
@@ -69,6 +77,15 @@ class Run_Func():
         self.value = value
         self.output = output
         self.type = 'run_func'
+class Custom_Func():
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+        self.type = 'custom_func'
+class Return():
+    def __init__(self, values):
+        self.values = values
+        self.type = 'return'
 class Comparison():
     def __init__(self, left, comp, right):
         self.left = left
@@ -87,17 +104,9 @@ class Display():
         self.value = value
         self.type = 'display'
 class Input():
-    def __init__(self, string=''):
+    def __init__(self, string=Token('', 'str')):
         self.type = 'input'
         self.string = string
-#token class
-class Token():
-    def __init__(self, token, token_type):
-        self.token = token
-        self.token_type = token_type
-        self.type = 'token'
-    def print_vars(self):
-        print(self.token, self.token_type, self.location)
 #main parser function
 def parser(tokens, console_index, input_string):
     #line will be contained in a list
@@ -166,8 +175,8 @@ def parser(tokens, console_index, input_string):
             print(' ' * out_length + input_string)
             print(' ' * out_length + ' ' * (error_token.location - len(error_token.token)) + '^' * len(error_token.token))
             raise Parser_Error('')
-    #function to create statments
-    def statment():
+    #function to create statements
+    def statement():
         '''Makes Statement Objects'''
         if len(tokens) == current_index:
             return
@@ -176,27 +185,27 @@ def parser(tokens, console_index, input_string):
             comp = arrange_comps()
             #check if then is the next token
             expect('then', console_index)
-            st = statment()
-            return If_Statment(comp, st)
+            st = statement()
+            return If_statement(comp, st)
         elif accept_token('elif'):
             comp = arrange_comps()
             #check if then is the next token
             expect('then', console_index)
-            st = statment()
-            return Elif_Statment(comp, st)
-        #create then statment
+            st = statement()
+            return Elif_statement(comp, st)
+        #create then statement
         elif accept_token('then'):
-            st = statment()
-            return Then_Statment(st)
-        #create else statment
+            st = statement()
+            return Then_statement(st)
+        #create else statement
         elif accept_token('else'):
-            st = statment()
-            return Else_Statment(st)
-        #create make statment
+            st = statement()
+            return Else_statement(st)
+        #create make statement
         elif accept_token('make'):
             var_type, var, value = create_make()
-            return Make_Statment(var_type, var, value)
-        #display statments
+            return Make_statement(var_type, var, value)
+        #display statements
         elif accept_token('display'):
             value = create_display()
             return Display(value)
@@ -686,7 +695,7 @@ def parser(tokens, console_index, input_string):
             current_index += 1 
         elif accept_type('keyword'):
             current_index -= 1
-            syntax_tree.append(statment())
+            syntax_tree.append(statement())
         elif accept_type('flt'):
             current_index -= 1 
             syntax_tree.append(equation())
@@ -1078,7 +1087,7 @@ def file_parser(tokens, console_index, input_string):
         expect('=', console_index)
         #allow to get user input set to a variable. This will always be a string, and should be set as so
         if accept_token('input') and var_type.token == 'str':
-            if check_line_end():
+            if not check_line_end():
                 if accept_type('str'):
                     value = Input(string=expect_type('str', console_index))
                 else:
@@ -1131,6 +1140,7 @@ def file_parser(tokens, console_index, input_string):
                 array.append(tokens[line][current_index])
             elif accept_token('{'):
                 array.append(create_array())
+                current_index -= 1
             else:
                 print(f'[Out_{console_index}]: Type Error: {tokens[current_index].token} is not a valid type ({tokens[current_index].token_type}) for array')
                 out_length = len(f'[Out_{console_index}]: ')
@@ -1217,20 +1227,41 @@ def file_parser(tokens, console_index, input_string):
                 step = int(expect_type('flt', console_index).token)
             values = [start, stop, step]
         return var, for_type, values
-    def create_func():
+    def create_func(check_type=True):
         nonlocal current_index
-        name = expect_token('var', console_index)
+        name = expect_type('var', console_index)
         expect('[', console_index)
         #break if no arguments
         args = []
         while not accept_token(']'):
-            arg_type = expect_type('type', console_index)
-            arg_name = expect_type('var', console_index)
+            #allows this to be used for running functions, not just making them
+            if check_type:
+                arg_type = expect_type('type', console_index)
+                arg_name = expect_type('var', console_index)
+                arg = {
+                    'type': arg_type,
+                    'name': arg_name,
+                }
+                args.append(arg)
+            else:
+                args.append(tokens[line][current_index])
+                current_index += 1
             if accept_token(']'):
                 break
             else:
                 expect(',', console_index)
-    #return boolean if next token is the same as inputed token
+        return name, args
+    def create_return():
+        nonlocal current_index
+        values = []
+        #loop through all values being saved
+        #getout clause
+        if check_line_end():
+            values.append(None)
+        else:
+            values.append(tokens[line][current_index])
+            current_index += 1
+        return values
     def accept_token(token):
         '''returns boolean if next token is given token'''
         nonlocal current_index
@@ -1284,8 +1315,8 @@ def file_parser(tokens, console_index, input_string):
             print(' ' * out_length + input_string)
             print(' ' * out_length + ' ' * (error_token.location - len(error_token.token)) + '^' * len(error_token.token))
             raise Parser_Error('')
-    #function to create statments
-    def statment():
+    #function to create statements
+    def statement():
         nonlocal if_cache
         '''Makes Statement Objects'''
         nonlocal current_index, line
@@ -1298,23 +1329,23 @@ def file_parser(tokens, console_index, input_string):
             change_line_end()
             st = []
             expect('{', console_index)
-            #add blocker to if cache, helps with if statments insde the block
+            #add blocker to if cache, helps with if statements insde the block
             if_cache.append(If_Block())
             change_line_end()
             #loop until closing } is found
             while not accept_token('}'):
-                st.append(statment())
+                st.append(statement())
                 change_line_end()
             clear_if_cache()
-            obj = If_Statment(comp, st)
+            obj = If_statement(comp, st)
             if_cache.append(obj)
             return obj
         elif accept_token('elif'):
             if len(if_cache) > 0:
                 #check for parent if
-                if isinstance(if_cache[-1], If_Statment):
+                if isinstance(if_cache[-1], If_statement):
                     parent = if_cache[-1]
-                elif isinstance(if_cache[-1], Elif_Statment):
+                elif isinstance(if_cache[-1], Elif_statement):
                     parent = if_cache[-1]
                 #remove previous and add current to if cache
                 if_cache.pop()
@@ -1333,20 +1364,16 @@ def file_parser(tokens, console_index, input_string):
                     st.append(statement())
                     change_line_end()
                 clear_if_cache()
-                obj = Elif_Statment(comp, st, parent)
+                obj = Elif_statement(comp, st, parent)
                 if_cache.append(obj)
                 return obj
-        #create then statment
-        elif accept_token('then'):
-            st = statment()
-            return Then_Statment(st)
-        #create else statment
+        #create else statement
         elif accept_token('else'):
             if len(if_cache) > 0:
                 #check for a parent if or elif
-                if isinstance(if_cache[-1], If_Statment):
+                if isinstance(if_cache[-1], If_statement):
                     parent = if_cache[-1]
-                elif isinstance(if_cache[-1, Elif_Statment]):
+                elif isinstance(if_cache[-1], Elif_statement):
                     parent = if_cache[-1]
                 if_cache.pop()
                 #move to next line if at end of current line
@@ -1358,31 +1385,35 @@ def file_parser(tokens, console_index, input_string):
                 st = []
                 #loop until closing } is found
                 while not accept_token('}'):
-                    st.append(statment())
+                    st.append(statement())
                     change_line_end()
                 clear_if_cache()
-                return Else_Statment(st, parent)
+                return Else_statement(st, parent)
         else:
             #clear if cache if there is not an if (if chain is done)
             clear_if_cache()
-            #create make statment 
+            #create make statement 
             if accept_token('make'):
                 var_type, var, value = create_make()
-                return Make_Statment(var_type, var, value)
+                return Make_statement(var_type, var, value)
             #create function
             elif accept_token('func'):
                 #get name and args
                 name, args = create_func()
                 #prep to make block statement
                 change_line_end()
-                expect('{')
+                expect('{', console_index)
                 change_line_end()
                 st = []
                 #loop until closing } is found
                 while not accept_token('}'):
-                    st.appejnd(statement())
+                    st.append(statement())
                     change_line_end()
                 return Function(name, args, st)
+            #return statements
+            elif accept_token('return'):
+                values = create_return()
+                return Return(values)
             #create while loop
             elif accept_token('while'):
                 comp = arrange_comps()
@@ -1392,7 +1423,7 @@ def file_parser(tokens, console_index, input_string):
                 change_line_end()
                 st = []
                 while not accept_token('}'):
-                    st.append(statment())
+                    st.append(statement())
                     change_line_end()
                 return While_Loop(comp, st)
             #create for loop
@@ -1404,17 +1435,17 @@ def file_parser(tokens, console_index, input_string):
                 st = []
                 change_line_end()
                 while not accept_token('}'):
-                    st.append(statment())
+                    st.append(statement())
                     change_line_end()
                 return For_Loop(var, for_type, values, st)
-            #display statments
+            #display statements
             elif accept_token('display'):
                 #current_index += 1 
                 value = create_display()
                 return Display(value)
             elif accept_token('free'):
                 var = create_free()
-                return Free_Statment(var)
+                return Free_statement(var)
             elif accept_token('input'):
                 #current_index += 1
                 if check_line_end():
@@ -1433,7 +1464,7 @@ def file_parser(tokens, console_index, input_string):
     def check_line_end():
         '''Checks if it is at the end of the line'''
         nonlocal current_index, line
-        if current_index >= len(tokens[line]) - 1:
+        if current_index >= len(tokens[line]):
             return True
         else:
             return False
@@ -1460,9 +1491,13 @@ def file_parser(tokens, console_index, input_string):
     while line < len(tokens):
         #figure out what next token type is
         if accept_type('keyword'):
-            st = statment()
+            st = statement()
             if st != None:
                 syntax_tree.append(st)
+        #check for variable name to run functions
+        elif accept_type('var'):
+            name, args = create_func(check_type=False)
+            
         #move to next line if at end of current line
         change_line_end()
     return syntax_tree

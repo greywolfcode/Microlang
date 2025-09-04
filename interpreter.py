@@ -55,7 +55,7 @@ class Make_Statment():
 #define class structure for variable scope tree
 class Node():
     def __init__(self, parent):
-        #stor dictionary of variables
+        #store dictionary of variables
         self.variables = {}
         #store parent scope
         self.parent = parent
@@ -671,18 +671,13 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 output_stack.append(token)
             elif token.token_type == 'var':
                 #check if variable exists
-                if token.token in set(variables.keys()):
-                    #check to make sure the variable is a float
-                    if variables[token.token].type == 'flt':
-                        #add tokenized variable to output stack
-                        output_stack.append(Token(variables[token.token].value, variables[token.token].type))
-                    else:
-                        print(f'[Out_{console_index}]: Type Error: {token.token} is not a float')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
+                var = search_vars(current_scope, token.token)
+                #check to make sure the variable is a float
+                if var.type == 'flt':
+                    #add tokenized variable to output stack
+                    output_stack.append(Token(var.value, var.type))
                 else:
-                    print(f'[Out_{console_index}]: Name Error: {element.value.token} does not exist')
+                    print(f'[Out_{console_index}]: Type Error: {token.token} is not a float')
                     out_length = len(f'[Out_{console_index}]: ')
                     print(' ' * out_length + input_string)
                     print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
@@ -708,27 +703,27 @@ def file_interpreter(syntax_tree, console_index, input_string):
                         pass
                 elif element.value.token_type == 'var':
                     #chack if variable exists
-                    if element.value.token in set(variables.keys()):
+                    var = search_vars(current_scope, element.value.token)
+                    try:
+                        value = float(var.value)
+                        return Token(value, 'flt')
+                    except:
+                        #raise error
+                        pass
+            elif element.output.token == 'str':
+                if element.value.token_type == 'var':
+                    var = search_vars(current_scope, element.value.token)
+                    #check if variable is an array
+                    if var.type == 'array':
+                        value = convert_array_tokens(variables[element.value.token].value)
+                        return Token(value, 'str')
+                    else:
                         try:
-                            value = float(variables[element.value.token].value)
-                            return Token(value, 'flt')
+                            value = str(var.value)
+                            return Token(value, 'str')
                         except:
                             #raise error
                             pass
-            elif element.output.token == 'str':
-                if element.value.token_type == 'var':
-                    if element.value.token in set(variables.keys()):
-                        #check if variable is an array
-                        if variables[element.value.token].type == 'array':
-                            value = convert_array_tokens(variables[element.value.token].value)
-                            return Token(value, 'str')
-                        else:
-                            try:
-                                value = str(variables[element.value.token].value)
-                                return Token(value, 'str')
-                            except:
-                                #raise error
-                                pass
                 #arrays need to be formated correctly so they look correct
                 elif element.value.token_type == 'array':
                     value = convert_array_tokens(element.value.token)
@@ -743,37 +738,28 @@ def file_interpreter(syntax_tree, console_index, input_string):
             elif element.output.token == 'array':
                 #check for variables
                 if element.value.token_type == 'var':
-                    if element.value.token in set(variables.keys()):
-                        value = Token(variables[element.value.token].value, variables[element.value.token].type)
-                        return Token([value], 'array')
-                    else:
-                        #raise error
-                        pass
+                    var = search_vars(current_scope, element.value.token)
+                    value = Token(var.value, var.type)
+                    return Token([value], 'array')
                 else:
                     return Token([element.value], 'array')
         elif element.output.token_type == 'keyword':
             #get type of variable
             if element.output.token == 'type':
                 if element.value.token_type == 'var':
-                    if element.value.token in set(variables.keys()):
-                        value = variables[element.value.token].type
-                        return Token(value, 'str')
-                    else:
-                        #raise error
-                        pass
+                    var = search_vars(current_scope, element.value.token)
+                    value = var.type
+                    return Token(value, 'str')
                 else:
                     return Token(element.value.token_type, 'str')
             #get length of variable
             elif element.output.token == 'len':
                 if element.value.token_type == 'var':
-                    if element.value.token in set(variables.keys()):
-                        value = variables[element.value.token]
-                        #only arrays and strings have a length
-                        if value.type in {'array', 'str'}:
-                            return Token(len(value.value), 'flt')
-                        else:
-                            #raise error
-                            pass
+                    var = search_vars(current_scope, element.value.token)
+                    value = variables[element.value.token]
+                    #only arrays and strings have a length
+                    if value.type in {'array', 'str'}:
+                        return Token(len(value.value), 'flt')
                     else:
                         #raise error
                         pass
@@ -796,22 +782,16 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     value = f'float("{token.token}")'
                 elif token.token_type == 'var':
                     #check if variable exists
-                    if token.token in set(variables.keys()):
-                        var_value = variables[token.token].value
-                        var_type = variables[token.token].type
-                        #check for individual values; need to explicitly set to type for eval to work
-                        if var_type == 'str':
-                            value = f'"{var_value}"'
-                        elif var_type == 'flt':
-                            value = f'float("{var_value}")'
-                        else:
-                            value = var_value
+                    var = search_vars(current_scope, token.token)
+                    var_value = var.value
+                    var_type = var.type
+                    #check for individual values; need to explicitly set to type for eval to work
+                    if var_type == 'str':
+                        value = f'"{var_value}"'
+                    elif var_type == 'flt':
+                        value = f'float("{var_value}")'
                     else:
-                        print(f'[Out_{console_index}]: Name Error: {token.token} does not exist')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (token.location - len(token.token)) + '^' * len(token.token))
-                        raise Interpreter_Error('')
+                        value = var_value
                 else:
                     value = token.token
             return value
@@ -823,23 +803,17 @@ def file_interpreter(syntax_tree, console_index, input_string):
         #get variable value if setting a variable to another variable
         if element.var_type.token == 'var':
             #make sure variable exists
-            if element.value.token in set(variables.keys()):
-                var_type = variables[element.value.token].type
-                value = variables[element.value.token].value
-                #can pull proper values straight from other variable
-                variables[element.var.token] = Variable(var_type, value)
-            else:
-                print(f'[Out_{console_index}]: Name Error: {element.value.token} does not exist')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
-                raise Interpreter_Error('')
+            var = search_vars(current_scope, element.value.token)
+            var_type = var.type
+            value = var.value
+            #can pull proper values straight from other variable
+            current_scope.variables[element.var.token] = [Variable(var_type, value)]
         elif element.value.type == 'run_func':
             #get changer token
             value = run_func(element.value)
             if value.token_type == element.var_type.token:
                 #no longer need the token stuff in variable class
-                variables[element.var.token] = Variable(element.var_type.token, value.token)
+                current_scope.variables[element.var.token] = [Variable(element.var_type.token, value.token)]
             else:
                 print(f'[Out_{console_index}]: Type Error: {value.token_type} is not a {element.var_type.token}')
                 out_length = len(f'[Out_{console_index}]: ')
@@ -849,7 +823,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
         elif element.value.type == 'equation':
             #no longer need the token stuff in token class
             value = interpret_equation(element.value.postfix)
-            variables[element.var.token] = Variable(element.var_type.token, value.token)
+            current_scope.variables[element.var.token] = [Variable(element.var_type.token, value.token)]
         #edit arrays so that varibles are converted to their own values 
         elif element.var_type.token == 'array':
             #convert values inside arrays
@@ -859,23 +833,17 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #check for variables
                 if converted_array[num].token_type == 'var':
                     #ensure variable exists
-                    if converted_array[num].token in set(variables.keys()):
-                        #create new token in array based on variable value
-                        converted_array[num] = Token(variables[converted_array[num].token].value, variables[converted_array[num].token].type) 
-                    else:
-                        print(f'[Out_{console_index}]: Name Error: {converted_array[num].token} does not exist')
-                        out_length = len(f'[Out_{console_index}]: ')
-                        print(' ' * out_length + input_string)
-                        print(' ' * out_length + ' ' * (converted_array[num].location - len(converted_array[num].token)) + '^' * len(converted_array[num].token))
-                        raise Interpreter_Error('')
+                    var = search_vars(current_scope, converted_array[num].token)
+                    #create new token in array based on variable value
+                    converted_array[num] = Token(variables[converted_array[num].token].value, variables[converted_array[num].token].type) 
             #add variable to dictionary of variables
-            variables[element.var.token] = Variable(element.var_type.token, converted_array)
+            current_scope.variables[element.var.token] = [Variable(element.var_type.token, converted_array)]
         elif element.value.type == 'input':
             #gets input from the user
-            variables[element.var.token] = Variable(element.var_type.token, get_input(element.value.string))
+            current_scope.variables[element.var.token] = [Variable(element.var_type.token, get_input(element.value.string))]
         else:
             #no longer need the token stuff in token class
-            variables[element.var.token] = Variable(element.var_type.token, element.value.token)
+            current_scope.variables[element.var.token] = [Variable(element.var_type.token, element.value.token)]
     def output_display(element):
         nonlocal variables
         statement = element.value
@@ -889,20 +857,14 @@ def file_interpreter(syntax_tree, console_index, input_string):
             print(value)
         elif statement.token_type == 'var':
             #make sure variable exists
-            if statement.token in set(variables.keys()):
-                #make arrays look good
-                if variables[statement.token].type == 'array':
-                    print_array = convert_array_tokens(variables[statement.token].value)
-                    #print the array
-                    print(print_array)
-                else:
-                    print(variables[statement.token].value)
+            var = search_vars(current_scope, statement.token)
+            #make arrays look good
+            if var.type == 'array':
+                print_array = convert_array_tokens(variables[statement.token].value)
+                #print the array
+                print(print_array)
             else:
-                print(f'[Out_{console_index}]: Name Error: {statement.token} does not exist')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (statement.location - len(statement.token)) + '^' * len(statement.token))
-                raise Interpreter_Error('')
+                print(var.value)
         elif statement.token_type == 'array':
             #convert all inside tokens to human readable charachters
             print_array = convert_array_tokens(statement.token)
@@ -914,14 +876,8 @@ def file_interpreter(syntax_tree, console_index, input_string):
         '''Free a variable from memory'''
         nonlocal variables 
         #delete variable if it exists, otherwise raise an error
-        if element.var.token in set(variables.keys()):
-            del variables[element.var.token]
-        else:
-            print(f'[Out_{console_index}]: Name Error: {element.var.token} does not exist')
-            out_length = len(f'[Out_{console_index}]: ')
-            print(' ' * out_length + input_string)
-            print(' ' * out_length + ' ' * (statement.location - len(statement.token)) + '^' * len(statement.token))
-            raise Interpreter_Error('')
+        var = search_vars(current_scope, element.var.token)
+        del current_scope.variables[element.var.token]
     def get_input(string):
         return input(string.token)
     def run_command(element):
@@ -955,6 +911,10 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     output_done = True
                 else:
                     element.true = False
+            #set parent to false and self to true so lower levels don't get wrong signal
+            else:
+                element.parent.true = False
+                element.true = True
         elif element.type == 'else':
             #check if precursor if/elif statement was found to be true
             if element.parent.true == False:
@@ -964,6 +924,9 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     run_command(statement)
                 #set variable to show output was completed
                 output_done = True
+            #clear parent truth value
+            else:
+                element.parent.true = False
         elif element.type == 'while':
             while interpret_comp(element.comparison):
                 for statement in element.statement:
@@ -983,7 +946,12 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     set_vars(var)
                     for statement in element.statement:
                         run_command(statement)
-                    
+        elif element.type == 'function':
+            #saving function to variable
+            current_scope.variables[element.name] = element
+        elif element.type == 'custom_func':
+            #run custom function
+            pass
     #loop through all sections of tree
     for tree in syntax_tree:
         run_command(tree)
