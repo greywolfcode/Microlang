@@ -820,6 +820,9 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 print(' ' * out_length + input_string)
                 print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
                 raise Interpreter_Error('')
+        elif element.value.type == 'custom_func':
+            value = custom_func(element.value)
+            current_scope.variables[element.var.token] = [Variable(element.var_type.token, value.token)]
         elif element.value.type == 'equation':
             #no longer need the token stuff in token class
             value = interpret_equation(element.value.postfix)
@@ -880,7 +883,40 @@ def file_interpreter(syntax_tree, console_index, input_string):
         del current_scope.variables[element.var.token]
     def get_input(string):
         return input(string.token)
+    def custom_func(element):
+        nonlocal current_scope
+        func = search_vars(current_scope, element.name.token)
+        #make sure func is a function
+        if func.type == 'function':
+            #create new scope and change scope
+            new_scope = Node(current_scope)
+            current_scope = new_scope
+            #iterate through args and add them to variables
+            for num, arg in enumerate(func.args):
+                #try except in case not enough argumetns were provided
+                try:
+                    if element.args[num].token_type == arg['type'].token:
+                        current_scope.variables[arg['name'].token] = [Variable(arg['type'].token, element.args[num].token)]
+                except:
+                    #raise error
+                    pass
+            #run function code
+            for statement in func.statement:
+                value = run_command(statement)
+                #break if it gets a return value
+                if value != None:
+                    break
+            #reset scope once function is done
+            current_scope = new_scope.parent
+            #free new_scope
+            del new_scope
+            #return value
+            return value
+        else:
+            #raise error
+            pass
     def run_command(element):
+        nonlocal current_scope
         #check what needs to be done based on what type of structure is next
         if element.type == 'display':
             output_display(element)
@@ -948,10 +984,22 @@ def file_interpreter(syntax_tree, console_index, input_string):
                         run_command(statement)
         elif element.type == 'function':
             #saving function to variable
-            current_scope.variables[element.name] = element
+            current_scope.variables[element.name.token] = [element]
+        #run custom function
         elif element.type == 'custom_func':
-            #run custom function
-            pass
+            custom_func(element)
+        #return statement
+        elif element.type == 'return':
+            #return the value of the variable if it is a variable
+            if element.value[0].token_type == 'var':
+                var_value = search_vars(current_scope, element.value[0].token)
+                #turn var value into a token to make compatability with other variable setting better
+                value = Token(var_value.value, var_value.type)
+                
+            else:
+                value = element.value[0]
+            #return the value
+            return value
     #loop through all sections of tree
     for tree in syntax_tree:
         run_command(tree)

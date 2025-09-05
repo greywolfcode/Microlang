@@ -83,8 +83,8 @@ class Custom_Func():
         self.args = args
         self.type = 'custom_func'
 class Return():
-    def __init__(self, values):
-        self.values = values
+    def __init__(self, value):
+        self.value = value
         self.type = 'return'
 class Comparison():
     def __init__(self, left, comp, right):
@@ -1082,6 +1082,7 @@ def file_parser(tokens, console_index, input_string):
     def create_make():
         '''Makes Make Statement Objects'''
         nonlocal current_index
+        used = False
         var_type = expect_type('type', console_index)
         var_name = expect_type('var', console_index)
         expect('=', console_index)
@@ -1094,7 +1095,26 @@ def file_parser(tokens, console_index, input_string):
                     value = Input()
             else:
                 value = Input()
-        #check if a function is being run
+        #check if running function/setting to variable
+        elif accept_type('var'):
+            current_index += 1
+            #check if the line ends after the variable
+            if not change_line_end():
+                if accept_token('['):
+                    current_index -= 2
+                    name, args = create_func(check_type=False)
+                    value = Custom_Func(name, args)
+                    #tell next chain of if statements not to run
+                    used = True
+                else:
+                    #decrease current index so next options work properly
+                    current_index -= 1
+            else:
+                current_index -= 1
+                value = expect_type('var')
+        if used == True:
+            pass
+        #check if a variable function is being run
         elif accept_type('type') or accept_type('keyword'):
             value = create_run_func()
         #arrays need to be parsed
@@ -1497,7 +1517,7 @@ def file_parser(tokens, console_index, input_string):
         #check for variable name to run functions
         elif accept_type('var'):
             name, args = create_func(check_type=False)
-            
+            syntax_tree.append(Custom_Func(name, args))
         #move to next line if at end of current line
         change_line_end()
     return syntax_tree

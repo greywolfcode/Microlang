@@ -1,16 +1,18 @@
 #basic function:
 #func NAME [ ARGS ]
 #arguments must have type specified
-func function [ flt arg1 , str arg2 ]
+func new_func [ flt arg1 , str arg2 ]
 {
     #what the function does
     display arg1
     display arg2
 }
 #run function
-function [ 5 , 'hi' ]
+new_func [ 5 , 'Hello!' ]
 #returning variables
-func return_var []
+func return_var [ ]
 {
     return 'Hi'
 }
+make str a = return_var [ ]
+display a
