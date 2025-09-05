@@ -1,9 +1,10 @@
 func hello [ flt f , flt j ]
 {
     display f
-    display g
-    make flt c = f + g
+    display j
+    make flt c = f + j
     return c
 }
 
-hello [ 5 , 6 ]
+make flt d = hello [ 5 , 6 ]
+display d
