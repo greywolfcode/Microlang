@@ -822,7 +822,12 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 raise Interpreter_Error('')
         elif element.value.type == 'custom_func':
             value = custom_func(element.value)
-            current_scope.variables[element.var.token] = [Variable(element.var_type.token, value.token)]
+            #make sure type matches
+            if value.token_type == element.var_type.token:
+                current_scope.variables[element.var.token] = [Variable(element.var_type.token, value.token)]
+            else:
+                #raise error
+                pass
         elif element.value.type == 'equation':
             #no longer need the token stuff in token class
             value = interpret_equation(element.value.postfix)
@@ -857,7 +862,6 @@ def file_interpreter(syntax_tree, console_index, input_string):
         elif statement.type == 'equation':
             #solve equation
             value = interpret_equation(statement.value)
-            print(value)
         elif statement.token_type == 'var':
             #make sure variable exists
             var = search_vars(current_scope, statement.token)
@@ -891,6 +895,8 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #create new scope and change scope
             new_scope = Node(current_scope)
             current_scope = new_scope
+            #add return type to current scope
+            current_scope.return_type = func.return_type
             #iterate through args and add them to variables
             for num, arg in enumerate(func.args):
                 #try except in case not enough argumetns were provided
@@ -995,11 +1001,15 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 var_value = search_vars(current_scope, element.value[0].token)
                 #turn var value into a token to make compatability with other variable setting better
                 value = Token(var_value.value, var_value.type)
-                
             else:
                 value = element.value[0]
-            #return the value
-            return value
+            #make sure output type is correct
+            if value.token_type == current_scope.return_type.token:
+                #return the value
+                return value
+            else:
+                #raise error
+                pass
     #loop through all sections of tree
     for tree in syntax_tree:
         run_command(tree)

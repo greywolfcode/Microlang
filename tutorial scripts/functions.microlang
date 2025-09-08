@@ -1,7 +1,7 @@
 #basic function:
 #func NAME [ ARGS ]
-#arguments must have type specified
-func new_func [ flt arg1 , str arg2 ]
+#arguments must have type specified, and specify type to return
+func new_func [ flt arg1 , str arg2 ] -> void
 {
     #what the function does
     display arg1
@@ -9,8 +9,8 @@ func new_func [ flt arg1 , str arg2 ]
 }
 #run function
 new_func [ 5 , 'Hello!' ]
-#returning variables
-func return_var [ ]
+#returning variables: can only return one thing
+func return_var [ ] -> str
 {
     return 'Hi'
 }

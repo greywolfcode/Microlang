@@ -5,12 +5,12 @@
 #add iterating through arrays to for loop
 #add classes: class NAME [ PARENTS ] FUNCTIONS 
 #raise error in parser if elif/else do not have a parent
-#make function to run functions
-#make function return current variable scope to parent scope after completion
-#replace variable instances with new tree variable system
+#single raise error function
+#fill in all missing areas to raise error
 #add importing microlang files with: import FILENAME
 #add opening files with: open FILEPATH {}
 #add break command for loops
+#add global and nonlocal commands for functions
 
 #import standerd libraries
 import traceback

@@ -40,10 +40,11 @@ class Else_statement():
         self.parent = parent
         self.type = 'else'
 class Function():
-    def __init__(self, name, args, statement):
+    def __init__(self, name, args, statement, return_type):
         self.name = name
         self.args = args
         self.statement = statement
+        self.return_type = return_type
         self.type = 'function'
 class While_Loop():
     def __init__(self, comparison, statement):
@@ -1084,6 +1085,9 @@ def file_parser(tokens, console_index, input_string):
         nonlocal current_index
         used = False
         var_type = expect_type('type', console_index)
+        #check for making instance variable
+        if accept_token('self'):
+            expect('.', console_index)
         var_name = expect_type('var', console_index)
         expect('=', console_index)
         #allow to get user input set to a variable. This will always be a string, and should be set as so
@@ -1112,6 +1116,9 @@ def file_parser(tokens, console_index, input_string):
             else:
                 current_index -= 1
                 value = expect_type('var')
+                
+                
+                
         if used == True:
             pass
         #check if a variable function is being run
@@ -1263,6 +1270,7 @@ def file_parser(tokens, console_index, input_string):
                     'name': arg_name,
                 }
                 args.append(arg)
+                #check for type to return
             else:
                 args.append(tokens[line][current_index])
                 current_index += 1
@@ -1270,7 +1278,29 @@ def file_parser(tokens, console_index, input_string):
                 break
             else:
                 expect(',', console_index)
-        return name, args
+        #return if running the function
+        if check_type == False:
+            return name, args
+        #check for return type and return if making the fucnton
+        else:
+            expect('->', console_index)
+            return_type = expect_type('type', console_index)
+            return name, args, return_type
+    def create_class():
+        #get name
+        name = expect_type('var', console_index)
+        expect('[', console_index)
+        #loop until closing ] is found
+        parents = []
+        while not accept_token(']'):
+            if accept_type('var'):
+                parents.append(expect_type('var', console_index))
+                #check for comma
+            if accept_token(']'):
+                break
+            else:
+                expect(',', console_index)
+        return name, parents
     def create_return():
         nonlocal current_index
         values = []
@@ -1419,7 +1449,7 @@ def file_parser(tokens, console_index, input_string):
             #create function
             elif accept_token('func'):
                 #get name and args
-                name, args = create_func()
+                name, args, return_type = create_func()
                 #prep to make block statement
                 change_line_end()
                 expect('{', console_index)
@@ -1429,7 +1459,32 @@ def file_parser(tokens, console_index, input_string):
                 while not accept_token('}'):
                     st.append(statement())
                     change_line_end()
-                return Function(name, args, st)
+                return Function(name, args, st, return_type)
+            #create class
+            elif accept_token('class'):
+                name, parents = create_class()
+                change_line_end()
+                #check for start of block
+                expect('{', console_index)
+                change_line_end()
+                functions = {}
+                while True:
+                    #only functions are allowed. Check for functions
+                    if accept_token('func'):
+                        current_index -= 1
+                        #get new function
+                        new_func = statement()
+                        #functions are a dictionary with name as key
+                        #check if function already exists
+                        if not new_func.name.token in set(functions.keys()):
+                            functions[new_func.name.token] = new_func
+                        else:
+                            #raise error
+                            pass
+                    change_line_end()
+                    #check for closing }
+                    if accept_token('}'):
+                        break
             #return statements
             elif accept_token('return'):
                 values = create_return()
@@ -1516,7 +1571,7 @@ def file_parser(tokens, console_index, input_string):
                 syntax_tree.append(st)
         #check for variable name to run functions
         elif accept_type('var'):
-            name, args = create_func(check_type=False)
+            name, args= create_func(check_type=False)
             syntax_tree.append(Custom_Func(name, args))
         #move to next line if at end of current line
         change_line_end()

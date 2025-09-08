@@ -1,10 +1,16 @@
-func hello [ flt f , flt j ]
+class classOne [ ]
 {
-    display f
-    display j
-    make flt c = f + j
-    return c
+    func __init__ [ flt one , flt two ] -> void
+    {
+        make flt self . one = one
+        make flt self . two = two
+    }
+    func add [ ] -> flt
+    {
+        make flt c = self . one + self . two
+        return c
+    }
 }
 
-make flt d = hello [ 5 , 6 ]
-display d
+make instance d = classOne [ 9 , 7 ]
+make flt e = d . add []
