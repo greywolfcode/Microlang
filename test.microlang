@@ -2,15 +2,15 @@ class classOne [ ]
 {
     func __init__ [ flt one , flt two ] -> void
     {
-        make flt self . one = one
-        make flt self . two = two
+        make flt self.one = one
+        make flt self.two = two
     }
     func add [ ] -> flt
     {
-        make flt c = self . one + self . two
+        make flt c = self.one + self.two
         return c
     }
 }
 
-make instance d = classOne [ 9 , 7 ]
-make flt e = d . add []
+make instance d = new classOne [ 9 , 7 ]
+make flt e = d . add [ ]

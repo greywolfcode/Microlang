@@ -134,8 +134,8 @@ def file_lexer(input_string, console_index):
     def add_token(token, index):
         #adds token to current row, as that will be the last one added
         nonlocal tokens, line
-        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'do', 'return', 'func', '->', 'class', 'self'}
-        types = {'flt', 'str', 'array', 'var', 'bool', 'void'}
+        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'do', 'return', 'func', '->', 'class', 'new'}
+        types = {'flt', 'str', 'array', 'var', 'bool', 'void', 'instance'}
         booleans = {'True', 'False'}
         #token is a string if there has been an even number of quotes found
         if found_quotes != 0 and found_quotes % 2 == 0:
@@ -175,6 +175,9 @@ def file_lexer(input_string, console_index):
             #check if it is a valid variable name
             elif var_reg.search(token):
                 tokens[-1].append(Token(token, 'var', index - len(current_token), line))
+            #check if self. variable
+            elif 'self.' in token and var_reg.search(token[5:]):
+                tokens[-1].append(Token(token, 'var', index-len(current_token), line))
             #check if it is a assignment equals; length check makes = assignment but == a compare
             elif assign_reg.search(token) and len(token) == 1:
                 tokens[-1].append(Token(token, 'assign', index - len(current_token), line))

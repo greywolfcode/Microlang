@@ -46,6 +46,17 @@ class Function():
         self.statement = statement
         self.return_type = return_type
         self.type = 'function'
+class Class():
+    def __init__(self, name, parents, functions):
+        self.name = name
+        self.parents = parents
+        self.functions = functions
+        self.type = 'class'
+class Make_Class_Instance():
+    def __init__(self, name, args):
+        self.name = name
+        self.args = args
+        self.type = 'make_class_instance'
 class While_Loop():
     def __init__(self, comparison, statement):
         self.comparison = comparison
@@ -74,15 +85,23 @@ class Changer():
         self.output = output
         self.type = 'changer'
 class Run_Func():
+    '''Functions on variable objects'''
     def __init__(self, value, output):
         self.value = value
         self.output = output
         self.type = 'run_func'
 class Custom_Func():
+    '''For running lone functions'''
     def __init__(self, name, args):
         self.name = name
         self.args = args
         self.type = 'custom_func'
+class Class_Func():
+    '''For running functions that are part of a class'''
+    def __init__(self, instance, name, args):
+        self.instance = instance
+        self.name = name
+        self.args = args
 class Return():
     def __init__(self, value):
         self.value = value
@@ -1085,9 +1104,6 @@ def file_parser(tokens, console_index, input_string):
         nonlocal current_index
         used = False
         var_type = expect_type('type', console_index)
-        #check for making instance variable
-        if accept_token('self'):
-            expect('.', console_index)
         var_name = expect_type('var', console_index)
         expect('=', console_index)
         #allow to get user input set to a variable. This will always be a string, and should be set as so
@@ -1103,24 +1119,40 @@ def file_parser(tokens, console_index, input_string):
         elif accept_type('var'):
             current_index += 1
             #check if the line ends after the variable
-            if not change_line_end():
+            if not check_line_end():
                 if accept_token('['):
+                    #decrement current_index, it was increased to run the checks
                     current_index -= 2
                     name, args = create_func(check_type=False)
                     value = Custom_Func(name, args)
                     #tell next chain of if statements not to run
+                    used = True
+                #for runnign instances of classes
+                elif accept_token('.'):
+                    #decrement current_index, it was increased to run checks
+                    current_index -= 2
+                    #get class instance
+                    instance = expect_type('var', console_index)
+                    #pass over period
+                    expect('.', console_index)
+                    name, args = create_func(check_type=False)
+                    value = Class_Func(instance, name, args)
+                    #tell next chain of if statements to not run
                     used = True
                 else:
                     #decrease current index so next options work properly
                     current_index -= 1
             else:
                 current_index -= 1
-                value = expect_type('var')
-                
-                
-                
+                value = expect_type('var', console_index)
+                used = True
         if used == True:
             pass
+        #check if instance of class is being made
+        elif accept_token('new'):
+            #hijacking create_func to get class definition
+            name, args = create_func(check_type=False)
+            value = Make_Class_Instance(name, args)
         #check if a variable function is being run
         elif accept_type('type') or accept_type('keyword'):
             value = create_run_func()
@@ -1485,6 +1517,7 @@ def file_parser(tokens, console_index, input_string):
                     #check for closing }
                     if accept_token('}'):
                         break
+                return Class(name, parents, functions)
             #return statements
             elif accept_token('return'):
                 values = create_return()

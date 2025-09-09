@@ -43,15 +43,23 @@ class Token():
     def print_vars(self):
         print(self.token, self.token_type, self.location)
 class Variable():
+    '''Variable storing class'''
     def __init__(self, var_type, value):
         self.type = var_type 
         self.value = value
 class Make_Statment():
+    '''Class to store data to make variables'''
     def __init__ (self, var_type, var, value):
         self.var_type = var_type
         self.var = var
         self.value = value
         self.type = 'make'
+class Class_Instance():
+    '''Class to store class instances'''
+    def __init__(self, instance_class):
+        #variable to point to what class this is an instance of
+        self.instance_class = instance_class
+        self.type = 'class_instance'
 #define class structure for variable scope tree
 class Node():
     def __init__(self, parent):
@@ -827,6 +835,13 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 current_scope.variables[element.var.token] = [Variable(element.var_type.token, value.token)]
             else:
                 #raise error
+                pass
+        elif element.value.type == 'make_class_instance':
+            instance_class = search_vars(current_scope, element.value.name.token)
+            #check if there is an init function
+            if '__init__' in set(instance_class.functions.keys()):
+                pass
+            else:
                 pass
         elif element.value.type == 'equation':
             #no longer need the token stuff in token class
