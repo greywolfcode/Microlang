@@ -7,10 +7,11 @@ class classOne [ ]
     }
     func add [ ] -> flt
     {
-        make flt c = self.one + self.two
+        make flt c = self.one
         return c
     }
 }
 
 make instance d = new classOne [ 9 , 7 ]
 make flt e = d . add [ ]
+display e

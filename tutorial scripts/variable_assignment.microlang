@@ -9,5 +9,5 @@ make bool x = False
 make array x = { 5 , True , 'Hi' , { 'Array' } , 9 }
 #assign from another variable
 make var y = x
-#for big scripts, it is reccomended to free variables to save memory
+#for big scripts, it is recomended to free variables to save memory
 free x

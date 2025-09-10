@@ -102,6 +102,7 @@ class Class_Func():
         self.instance = instance
         self.name = name
         self.args = args
+        self.type = 'class_func'
 class Return():
     def __init__(self, value):
         self.value = value

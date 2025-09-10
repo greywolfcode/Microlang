@@ -1,0 +1,21 @@
+#make a class
+class basicClass [ ]
+{
+    #init function runs at initalisation
+    func __init__ [ flt arg1 , flt arg2 ] -> void
+    {
+        #create instance variables
+        make flt self.arg1 = arg1
+        make flt self.arg2 = arg2
+    }
+    #other functions
+    func addValues [ ] -> flt
+    {
+        make flt c = self.arg1 + self.arg2
+        return c
+    }
+}
+#make class isntacne
+make instance classInstance = new basicClass [ 7 , 8 ]
+#run instance function
+make flt x = d . addValues [ ]

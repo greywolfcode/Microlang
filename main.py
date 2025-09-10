@@ -3,14 +3,14 @@
 #make error correction code point to the correct spot in the input string
 #add for loops: for STATEMENT then STATEMENT
 #add iterating through arrays to for loop
-#add classes: class NAME [ PARENTS ] FUNCTIONS 
 #raise error in parser if elif/else do not have a parent
 #single raise error function
-#fill in all missing areas to raise error
+#fill in all missing areas requireing raise error
 #add importing microlang files with: import FILENAME
 #add opening files with: open FILEPATH {}
 #add break command for loops
 #add global and nonlocal commands for functions
+#make parents for classes work
 
 #import standerd libraries
 import traceback
