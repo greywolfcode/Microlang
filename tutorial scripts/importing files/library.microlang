@@ -1,0 +1,6 @@
+#simple adition function
+func add [ flt a , flt b ]
+{
+    make flt c = a +  b
+    return c
+}

@@ -68,14 +68,18 @@ class Node():
         self.variables = {}
         #store parent scope
         self.parent = parent
-def search_vars(current_scope, variable):
+def search_vars(current_scope, variable, all_scopes=True, give_value=True):
     '''Get a variable moving up the scope tree '''
     #check if variable is in local scope
     if variable in set(current_scope.variables.keys()):
-        #using lists for a mutable data type, so have to get 1st item in the list
-        return current_scope.variables[variable][0]
-    #check if there is no parent
-    elif current_scope.parent == None:
+        #allows getting mutable list oject to gat refrence to it
+        if give_value == True:
+            #using lists for a mutable data type, so have to get 1st item in the list
+            return current_scope.variables[variable][0]
+        else:
+            return current_scope.variables[variable]
+    #check if there is no parent, or if it shouldn't search parent scopes
+    elif current_scope.parent == None or all_scopes == False:
         #variable does not exist - raise error
         pass
     #search parent scope for variable
@@ -844,12 +848,12 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #check if there is an init function
             if '__init__' in set(instance_class.functions.keys()):
                 #run using run function class
-                run_class_func_init(instance_class.functions['__init__'], instance, instance.instance_vars)
+                run_class_func_init(instance_class.functions['__init__'], element.value, instance.instance_vars)
                 #remove reference to instance variables in current_scope
                 del current_scope.class_vars
             value = instance
         elif element.value.type == 'class_func':
-            result = run_class_func(element)
+            result = run_class_func(element.value)
             value = Variable(element.var_type.token, result.token)
             #remove refrence to instance variables in current_scope
             del current_scope.class_vars
@@ -929,13 +933,13 @@ def file_interpreter(syntax_tree, console_index, input_string):
         return input(string.token)
     def run_class_func(element):
         #retrive class instance
-        instance = search_vars(current_scope, element.value.instance.token)
+        instance = search_vars(current_scope, element.instance.token)
         #make sure function exists in class
-        if element.value.name.token in set(instance.instance_class.functions.keys()):
+        if element.name.token in set(instance.instance_class.functions.keys()):
             #add refrence to isntance vars in current_scope
             current_scope.class_vars = instance.instance_vars
             #retrive and run the function
-            value = run_class_func_init(instance.instance_class.functions[element.value.name.token], element, instance.instance_vars)
+            value = run_class_func_init(instance.instance_class.functions[element.name.token], element, instance.instance_vars)
         else:
             #raise error
             pass
@@ -1001,9 +1005,15 @@ def file_interpreter(syntax_tree, console_index, input_string):
         elif element.type == 'if':
             #check whether the comaprison is true or false
             if interpret_comp(element.comparison):
+                #set self to true
                 element.true = True
                 for statement in element.statement:
-                    run_command(statement)
+                    value = run_command(statement)
+                    #get out in case inside a loop/function
+                    if value == 'break':
+                        return 'break'
+                    elif value != None:
+                        return value
             #reset to false in case it is in a loop
             else:
                 element.true = False
@@ -1012,9 +1022,15 @@ def file_interpreter(syntax_tree, console_index, input_string):
             if element.parent.true == False:
                 #check whether the comaprison is true or false
                 if interpret_comp(element.comparison):
+                    #set self to be true
                     element.true = True
                     for statement in element.statement:
-                        run_command(statement)
+                        value = run_command(statement)
+                        #getout in case inside a loop/function
+                        if value == 'break':
+                            return 'break'
+                        elif value != None:
+                            return value
                     #set variable to show output was completed
                     output_done = True
                 else:
@@ -1029,16 +1045,32 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #check whether the comaprison is true or false
                 if_used = True
                 for statement in element.statement:
-                    run_command(statement)
+                    value = run_command(statement)
+                    #getout in case inside a loop/function
+                    if value == 'break':
+                        return 'break'
+                    elif value != None:
+                        return value
                 #set variable to show output was completed
                 output_done = True
             #clear parent truth value
             else:
                 element.parent.true = False
         elif element.type == 'while':
+            #check vomaprison
             while interpret_comp(element.comparison):
+                #loop through all statements inside
                 for statement in element.statement:
-                    run_command(statement)
+                    value = run_command(statement)
+                    #getout for break
+                    if value == 'break':
+                        #using return becuase of nested loop
+                        return
+                    #getout for return
+                    elif value != None:
+                        return value
+        elif element.type == 'break':
+            return 'break'
         elif element.type == 'for':
             #iterating a number up
             if element.for_type == 'num':
@@ -1053,10 +1085,31 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     #save variable 1st
                     set_vars(var)
                     for statement in element.statement:
-                        run_command(statement)
+                        value = run_command(statement)
+                        #getout for break
+                        if value == 'break':
+                            return
+                        #getout for return
+                        elif value != None:
+                            return value
         elif element.type == 'function':
             #saving function to variable
             current_scope.variables[element.name.token] = [element]
+        #make global variable useable in function
+        elif element.type == 'global':
+            #loop until global scope is found
+            scope = current_scope
+            while True:
+                if scope.parent == None:
+                    break
+                else:
+                    scope = scope.parent
+            var = search_vars(scope, element.var.token, all_scopes=False, give_value=False)
+            current_scope.variables[element.var.token] = var
+        #get nonlocal variable (from one scope up)
+        elif element.type == 'nonlocal':
+            var = search_vars(current_scope.parent, element.var.token, all_scopes=False, give_value=False)
+            current_scope.variables[element.var.token] = var
         #run custom function
         elif element.type == 'custom_func':
             custom_func(element)

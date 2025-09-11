@@ -9,13 +9,13 @@ class basicClass [ ]
         make flt self.arg2 = arg2
     }
     #other functions
-    func addValues [ ] -> flt
+    func addValues [ flt value ] -> flt
     {
-        make flt c = self.arg1 + self.arg2
+        make flt c = self.arg1 + self.arg2 + value
         return c
     }
 }
 #make class isntacne
 make instance classInstance = new basicClass [ 7 , 8 ]
 #run instance function
-make flt x = d . addValues [ ]
+make flt x = classInstance . addValues [ 5 ]

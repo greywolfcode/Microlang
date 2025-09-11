@@ -3,8 +3,19 @@ for x = 0 , 10 do
 {
     display x
 }
+
 #can provide a step value to iterate by
 for x = 0 , 10 , 2 do
 {
     display x
+}
+
+#use break to exit loop early
+for x = 0 , 20 do
+{
+    display x
+    if x == 10 then
+    {
+        break
+    }
 }

@@ -1,3 +1,5 @@
+#import custom files
+import lexer
 #define custom exception to call
 class Parser_Error(Exception):
     '''This class creates the custom exception'''
@@ -46,6 +48,14 @@ class Function():
         self.statement = statement
         self.return_type = return_type
         self.type = 'function'
+class Global():
+    def __init__(self, var):
+        self.var = var
+        self.type = 'global'
+class Nonlocal():
+    def __init__(self, var):
+        self.var = var
+        self.type = 'nonlocal'
 class Class():
     def __init__(self, name, parents, functions):
         self.name = name
@@ -107,6 +117,9 @@ class Return():
     def __init__(self, value):
         self.value = value
         self.type = 'return'
+class Break():
+    def __init__ (self):
+        self.type = 'break'
 class Comparison():
     def __init__(self, left, comp, right):
         self.left = left
@@ -1417,8 +1430,7 @@ def file_parser(tokens, console_index, input_string):
             change_line_end()
             #loop until closing } is found
             while not accept_token('}'):
-                st.append(statement())
-                change_line_end()
+                st.append(get_element())
             clear_if_cache()
             obj = If_statement(comp, st)
             if_cache.append(obj)
@@ -1444,8 +1456,7 @@ def file_parser(tokens, console_index, input_string):
                 change_line_end()
                 #loop until closing } is found
                 while not accept_token('}'):
-                    st.append(statement())
-                    change_line_end()
+                    st.append(get_element())
                 clear_if_cache()
                 obj = Elif_statement(comp, st, parent)
                 if_cache.append(obj)
@@ -1468,8 +1479,7 @@ def file_parser(tokens, console_index, input_string):
                 st = []
                 #loop until closing } is found
                 while not accept_token('}'):
-                    st.append(statement())
-                    change_line_end()
+                    st.append(get_element())
                 clear_if_cache()
                 return Else_statement(st, parent)
         else:
@@ -1487,11 +1497,14 @@ def file_parser(tokens, console_index, input_string):
                 change_line_end()
                 expect('{', console_index)
                 change_line_end()
+                #update current block
+                current_block.append('func')
                 st = []
                 #loop until closing } is found
                 while not accept_token('}'):
-                    st.append(statement())
-                    change_line_end()
+                    st.append(get_element())
+                #update current_block
+                current_block.pop()
                 return Function(name, args, st, return_type)
             #create class
             elif accept_token('class'):
@@ -1501,6 +1514,8 @@ def file_parser(tokens, console_index, input_string):
                 expect('{', console_index)
                 change_line_end()
                 functions = {}
+                #update current block
+                current_block.append('class')
                 while True:
                     #only functions are allowed. Check for functions
                     if accept_token('func'):
@@ -1521,19 +1536,54 @@ def file_parser(tokens, console_index, input_string):
                 return Class(name, parents, functions)
             #return statements
             elif accept_token('return'):
-                values = create_return()
-                return Return(values)
+                #make sure currently inside a function block
+                if 'func' in current_block:
+                    values = create_return()
+                    return Return(values)
+                else:
+                    #raise error
+                    pass
+            #breaking from loop
+            elif accept_token('break'):
+                #make sure currently inside loop block (functions can't break loops, and if/elif/else do nto update current block)
+                if current_block[-1] == 'loop':
+                    return Break()
+                else:
+                    #raise error
+                    pass
+            #global/nonlocal for functions
+            elif accept_token('global'):
+                #make sure inside a function
+                if 'func' in current_block:
+                    var = expect_type('var', console_index)
+                    return Global(var)
+                else:
+                    #raise error
+                    pass
+            elif accept_token('nonlocal'):
+                #make sure inside a function
+                if 'func' in current_block:
+                    var = expect_type('var', console_index)
+                    return Nonlocal(var)
+                else:
+                    #raise error
+                    pass
             #create while loop
             elif accept_token('while'):
+                #get comparison and setup tokens
                 comp = arrange_comps()
                 expect('do', console_index)
                 change_line_end()
                 expect('{', console_index)
                 change_line_end()
+                #update current block
+                current_block.append('loop')
                 st = []
+                #loop through until closing { is found
                 while not accept_token('}'):
-                    st.append(statement())
-                    change_line_end()
+                    st.append(get_element())
+                #update current block
+                current_block.pop()
                 return While_Loop(comp, st)
             #create for loop
             elif accept_token('for'):
@@ -1541,11 +1591,15 @@ def file_parser(tokens, console_index, input_string):
                 expect('do', console_index)
                 change_line_end()
                 expect('{', console_index)
+                #update current_block 
+                current_block.append('loop')
                 st = []
                 change_line_end()
+                #loop until closing { is found
                 while not accept_token('}'):
-                    st.append(statement())
-                    change_line_end()
+                    st.append(get_element())
+                #update current block
+                current_block.pop()
                 return For_Loop(var, for_type, values, st)
             #display statements
             elif accept_token('display'):
@@ -1564,6 +1618,27 @@ def file_parser(tokens, console_index, input_string):
                         return Input()
                 else:
                     return Input()
+            #importing other files
+            elif accept_token('import'):
+                #load file
+                file_name = expect_type('var', console_index)
+                try: 
+                    with open(file_name + '.microlang', 'r') as file:
+                        file = file.read()
+                except:
+                    #raise error
+                    pass
+                #run other file through lexer
+                file_tokens = lexer.file_lexer(file, console_index)
+                #parse the otehr file
+                file_syntax_tree = file_parser(file_tokens, console_index)
+                #get only classes and functions from file
+                objects = []
+                for item in file_syntax_tree:
+                    if isinstance(item, Class):
+                        objects.append(item)
+                    elif isinstance(item, Function):
+                        objects.append(item)
     def change_line_end():
         '''Changes line if at the end of the line'''
         nonlocal current_index, line
@@ -1592,21 +1667,28 @@ def file_parser(tokens, console_index, input_string):
         #pop last one or if block
         if_cache.pop()
     #keep track of location in line and token
-    syntax_tree = []
-    if_cache = []
     line = 0
     current_index = 0
-    #iterate through lines
-    while line < len(tokens):
+    #list of entire syntax tree
+    syntax_tree = []
+    #keep track of if statement parents
+    if_cache = []
+    #keep track if it is in a block for block specific commands (nonlocal, break, etc.)
+    current_block = ['global']
+    def get_element():
         #figure out what next token type is
         if accept_type('keyword'):
             st = statement()
             if st != None:
-                syntax_tree.append(st)
+                element = st
         #check for variable name to run functions
         elif accept_type('var'):
             name, args= create_func(check_type=False)
-            syntax_tree.append(Custom_Func(name, args))
+            element = Custom_Func(name, args)
         #move to next line if at end of current line
         change_line_end()
+        return element
+    #iterate through lines
+    while line < len(tokens):
+        syntax_tree.append(get_element())
     return syntax_tree

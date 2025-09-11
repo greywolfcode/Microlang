@@ -1,17 +1,21 @@
-class classOne [ ]
+make flt x = 9
+make flt z = 10
+func test [ ] -> void
 {
-    func __init__ [ flt one , flt two ] -> void
+    global x
+    display x
+    
+    make flt y = 5
+    
+    func test_two [ ] -> void
     {
-        make flt self.one = one
-        make flt self.two = two
+        nonlocal y
+        display y
+        global z
+        display z
     }
-    func add [ ] -> flt
-    {
-        make flt c = self.one
-        return c
-    }
+    
+    test_two [ ]
 }
 
-make instance d = new classOne [ 9 , 7 ]
-make flt e = d . add [ ]
-display e
+test [ ]

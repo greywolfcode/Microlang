@@ -6,3 +6,16 @@ while x <= 8 do
     display x
     make flt x = x + 1
 }
+
+#Use break to exit loop early
+make flt x = 0
+while x < 20 do
+{
+    make flt x = x + 1
+    display x
+    #break if x equals 10
+    if x == 10 then
+    {
+        break
+    }
+}

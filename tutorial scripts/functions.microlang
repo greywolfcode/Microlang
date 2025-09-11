@@ -18,3 +18,29 @@ func return_var [ ] -> str
 #run function
 make str a = return_var [ ]
 display a
+
+#use global/nonlocal to get variables in other scopes
+make flt a = 0
+make flt b = 8
+func useGlobal [ ] -> void
+{
+    #get global a
+    global a
+    display a
+    
+    make flt c = 10
+    
+    #create child function
+    func useNonlocalAndGlobal [ ] -> void
+    {
+        #get b and c
+        global b
+        nonlocal c
+        display b
+        display c
+    }
+    #run child function
+    useNonlocalAndGlobal [ ]
+}
+#run function
+useGlobal [ ]

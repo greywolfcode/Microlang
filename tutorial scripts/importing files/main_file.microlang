@@ -1,0 +1,5 @@
+#import other file. Do not include the extension
+#only functions and clsses get saved
+import library
+
+make flt a = library.add [ 9 , 8 ]

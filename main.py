@@ -1,16 +1,16 @@
 #TODO:
 #fix all remaining bugs :)
 #make error correction code point to the correct spot in the input string
-#add for loops: for STATEMENT then STATEMENT
-#add iterating through arrays to for loop
-#raise error in parser if elif/else do not have a parent
 #single raise error function
 #fill in all missing areas requireing raise error
+#raise error in parser if elif/else do not have a parent
+#add try: except: block
+
+#add iterating through arrays to for loop
 #add importing microlang files with: import FILENAME
 #add opening files with: open FILEPATH {}
-#add break command for loops
-#add global and nonlocal commands for functions
 #make parents for classes work
+#allow changing variables after assignment
 
 #import standerd libraries
 import traceback
