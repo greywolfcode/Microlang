@@ -19,3 +19,16 @@ for x = 0 , 20 do
         break
     }
 }
+
+#can loop through arrays with for loop
+make array a = { 0 , 9 , 8 }
+for num in a do 
+{
+    display a
+}
+
+#can use an array not in a variables
+for item in { 'hi' , 8 , 7 } do
+{
+    display item
+}

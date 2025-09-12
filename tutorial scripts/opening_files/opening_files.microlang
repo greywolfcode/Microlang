@@ -1,0 +1,4 @@
+#open the file. Currently can only handle files that can be read as text
+open tutorial/opening_files/file.txt as file
+#file is opened and read as a string
+display file

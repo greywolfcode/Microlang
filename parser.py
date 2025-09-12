@@ -57,10 +57,10 @@ class Nonlocal():
         self.var = var
         self.type = 'nonlocal'
 class Class():
-    def __init__(self, name, parents, functions):
+    def __init__(self, name, parents, objects):
         self.name = name
         self.parents = parents
-        self.functions = functions
+        self.functions = objects
         self.type = 'class'
 class Make_Class_Instance():
     def __init__(self, name, args):
@@ -94,6 +94,11 @@ class Changer():
         self.value = value
         self.output = output
         self.type = 'changer'
+class Open_File():
+    def __init__(self, path, var):
+        self.path = path
+        self.var = var
+        self.type = 'open_file'
 class Run_Func():
     '''Functions on variable objects'''
     def __init__(self, value, output):
@@ -1277,12 +1282,13 @@ def file_parser(tokens, console_index, input_string):
         return expect_type('var', console_index)
     def create_for():
         nonlocal current_index
-        #current_index += 1
+        #get variable name to assign to
         var = expect_type('var', console_index)
-        expect('=', console_index)
         #iterate through array
         if accept_token('in'):
             for_type = 'array'
+        else:
+            expect('=', console_index)
         #flt - must use start/stop/step
         elif accept_type('flt'):
             for_type = 'num'
@@ -1513,19 +1519,28 @@ def file_parser(tokens, console_index, input_string):
                 #check for start of block
                 expect('{', console_index)
                 change_line_end()
-                functions = {}
+                objects = {}
                 #update current block
                 current_block.append('class')
                 while True:
-                    #only functions are allowed. Check for functions
+                    #only functions and classes are allowed. Check for functions
                     if accept_token('func'):
                         current_index -= 1
                         #get new function
                         new_func = statement()
                         #functions are a dictionary with name as key
                         #check if function already exists
-                        if not new_func.name.token in set(functions.keys()):
-                            functions[new_func.name.token] = new_func
+                        if not new_func.name.token in set(objects.keys()):
+                            objects[new_func.name.token] = new_func
+                        else:
+                            #raise error
+                            pass
+                    #check for classes
+                    elif accept_token('class'):
+                        current_index -= 1
+                        new_class = statement()
+                        if not new_class.name.token in set(objects.keys()):
+                            objects[new_class.name.token] = new_class
                         else:
                             #raise error
                             pass
@@ -1533,7 +1548,7 @@ def file_parser(tokens, console_index, input_string):
                     #check for closing }
                     if accept_token('}'):
                         break
-                return Class(name, parents, functions)
+                return Class(name, parents, objects)
             #return statements
             elif accept_token('return'):
                 #make sure currently inside a function block
@@ -1618,27 +1633,50 @@ def file_parser(tokens, console_index, input_string):
                         return Input()
                 else:
                     return Input()
+            #loading files
+            elif accept_token('open'):
+                path = expect_type('path', console_index)
+                expect('as', console_index)
+                var = expect_type('var', console_index)
+                return Open_File(path, var)
             #importing other files
             elif accept_token('import'):
                 #load file
-                file_name = expect_type('var', console_index)
+                file_path = expect_type('path', console_index)
                 try: 
-                    with open(file_name + '.microlang', 'r') as file:
+                    with open(file_path.token + '.microlang', 'r') as file:
                         file = file.read()
-                except:
+                except Exception as e:
                     #raise error
+                    print(e)
                     pass
+                file_name = file_path.token
                 #run other file through lexer
                 file_tokens = lexer.file_lexer(file, console_index)
                 #parse the otehr file
-                file_syntax_tree = file_parser(file_tokens, console_index)
+                file_syntax_tree = file_parser(file_tokens, console_index, file)
                 #get only classes and functions from file
-                objects = []
+                objects = {}
                 for item in file_syntax_tree:
                     if isinstance(item, Class):
-                        objects.append(item)
+                        objects[item.name.token] = item
                     elif isinstance(item, Function):
-                        objects.append(item)
+                        objects[item.name.token] = item
+                #get name from path
+                if '/' in file_name:
+                    name = Token(file_name.split('/')[-1], 'var')
+                elif '\\' in file_name:
+                    name = Token(file_name.split('\\')[-1], 'var')
+                else:
+                    name = Token(file_name, 'var')
+                #file is stored as a class object with path as name (so it cannot be made an instance of)
+                file_class = Class(file_path, [], objects)
+                #add to syntax tree. This prevents having to return two objects
+                syntax_tree.append(file_class)
+                #Add command to make an instance of the class
+                instance = Make_Class_Instance(file_path, [])
+                make_command = Make_statement(Token('instance', 'type'), name, instance)
+                return make_command
     def change_line_end():
         '''Changes line if at the end of the line'''
         nonlocal current_index, line

@@ -1129,8 +1129,20 @@ def file_interpreter(syntax_tree, console_index, input_string):
             else:
                 #raise error
                 pass
+        #cave class as variable
         elif element.type == 'class':
             current_scope.variables[element.name.token] = [element]
+        #open file and store it as a string
+        elif element.type == 'open_file':
+            #open file
+            try:
+                with open(element.path.token, 'r') as f:
+                    file = f.read()
+            except:
+                #raise error
+                pass
+            #save file as var
+            current_scope.variables[element.var.token] = [Variable('str', file)]
     #loop through all sections of tree
     for tree in syntax_tree:
         run_command(tree)

@@ -6,10 +6,11 @@
 #raise error in parser if elif/else do not have a parent
 #add try: except: block
 
-#add iterating through arrays to for loop
-#add importing microlang files with: import FILENAME
-#add opening files with: open FILEPATH {}
+#add iterating through arrays to for loop: for VAR in ARRAY do
+#get section of string
+#get items from array
 #make parents for classes work
+#make classes in classes work
 #allow changing variables after assignment
 
 #import standerd libraries

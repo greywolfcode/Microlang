@@ -134,7 +134,7 @@ def file_lexer(input_string, console_index):
     def add_token(token, index):
         #adds token to current row, as that will be the last one added
         nonlocal tokens, line
-        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'import'}
+        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'as', 'import'}
         types = {'flt', 'str', 'array', 'var', 'bool', 'void', 'instance'}
         booleans = {'True', 'False'}
         #token is a string if there has been an even number of quotes found
@@ -143,7 +143,8 @@ def file_lexer(input_string, console_index):
         else:
             #define matching patterns
             float_reg = re.compile(r'^[0-9.-]+$')
-            var_reg = re.compile(r'^[_a-zA-z0-9]+$')
+            var_reg = re.compile(r'^[_a-zA-Z0-9]+$')
+            path_reg = re.compile(r'^[_a-zA-Z0-9/.\\\\]+$')
             op_reg = re.compile(r'^[+\-*/]+$|^[\**]+$|^[%]+$')
             assign_reg = re.compile(r'^[=]+$')
             compare_reg = re.compile(r'^[==]+$|^[!=]+$|^[<=]+$|^[>=]+$|^[<]+$|^[>]+$')
@@ -181,9 +182,12 @@ def file_lexer(input_string, console_index):
             #check if it is a assignment equals; length check makes = assignment but == a compare
             elif assign_reg.search(token) and len(token) == 1:
                 tokens[-1].append(Token(token, 'assign', index - len(current_token), line))
-            #check if it is a valid variable name
+            #check if it is a valid comparison
             elif compare_reg.search(token):
                 tokens[-1].append(Token(token, 'comp', index - len(current_token), line))
+            #check if it is a path
+            elif path_reg.search(token):
+                tokens[-1].append(Token(token, 'path', index - len(current_token), line))
             #check if it is a container
             elif container_reg.search(token):
                 tokens[-1].append(Token(token, 'container', index - len(current_token), line))
