@@ -47,7 +47,7 @@ class Variable():
     def __init__(self, var_type, value):
         self.type = var_type 
         self.value = value
-class Make_Statment():
+class Make_Statement():
     '''Class to store data to make variables'''
     def __init__ (self, var_type, var, value):
         self.var_type = var_type
@@ -911,7 +911,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
             var = search_vars(current_scope, statement.token)
             #make arrays look good
             if var.type == 'array':
-                print_array = convert_array_tokens(variables[statement.token].value)
+                print_array = convert_array_tokens(var.value)
                 #print the array
                 print(print_array)
             else:
@@ -1077,13 +1077,49 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 nums = element.values
                 flt_token = Token('flt', 'type')
                 num_token = Token(nums[0], 'flt')
-                var = Make_Statment(flt_token, element.var, num_token)
+                var = Make_Statement(flt_token, element.var, num_token)
                 #loop through the start, stop step
                 for num in range(nums[0], nums[1], nums[2]):
                     num_token = Token(num, 'flt')
                     var.value = num_token
                     #save variable 1st
                     set_vars(var)
+                    for statement in element.statement:
+                        value = run_command(statement)
+                        #getout for break
+                        if value == 'break':
+                            return
+                        #getout for return
+                        elif value != None:
+                            return value
+            elif element.for_type == 'array':
+                #check for array vs var
+                if element.values.token_type ==  'var':
+                    #make sure variable is an array
+                    variable = search_vars(current_scope, element.values.token)
+                    if variable.type == 'array':
+                        array = variable.value
+                    else:
+                        #raise error
+                        pass
+                elif element.values.token_type == 'array':
+                    #raise error
+                    array = element.values.token
+                else:
+                    #raise error
+                    pass
+                #initalise var saving stuff
+                type_token = Token('array', 'type')
+                value_token = Token('0', 'str')
+                var = Make_Statement(type_token, element.var, value_token)
+                #loop through array
+                for value in array:
+                    value_token = Token(value.token, value.token_type)
+                    var.value = value_token
+                    type_token.token = value.token_type
+                    #save var
+                    set_vars(var)
+                    #loop thorugh commands inside
                     for statement in element.statement:
                         value = run_command(statement)
                         #getout for break

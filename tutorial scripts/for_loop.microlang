@@ -24,7 +24,7 @@ for x = 0 , 20 do
 make array a = { 0 , 9 , 8 }
 for num in a do 
 {
-    display a
+    display num
 }
 
 #can use an array not in a variables

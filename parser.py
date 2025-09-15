@@ -1290,7 +1290,7 @@ def file_parser(tokens, console_index, input_string):
         else:
             expect('=', console_index)
         #flt - must use start/stop/step
-        elif accept_type('flt'):
+        if accept_type('flt'):
             for_type = 'num'
             #start/stop/step need to be set to int to be used in loop
             start = int(expect_type('flt', console_index).token)
@@ -1305,6 +1305,14 @@ def file_parser(tokens, console_index, input_string):
                 expect(',', console_index)
                 step = int(expect_type('flt', console_index).token)
             values = [start, stop, step]
+        #var and array for iterating through arrays
+        elif accept_type('var'):
+            values = expect_type('var', console_index)
+        elif accept_token('{'):
+            values = create_array()
+        else:
+            #raise error
+            pass
         return var, for_type, values
     def create_func(check_type=True):
         nonlocal current_index
