@@ -6,12 +6,13 @@
 #raise error in parser if elif/else do not have a parent
 #add try: except: block
 
-#add iterating through arrays to for loop: for VAR in ARRAY do
 #get section of string
 #get items from array
 #make parents for classes work
+#retrive/modify variables in classes
+#allow copying variables to create non linked copy of them
 #make classes in classes work
-#allow changing variables after assignment
+#line stored in token by lexer is 1 to low (Off By One error?)
 
 #import standerd libraries
 import traceback

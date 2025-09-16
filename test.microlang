@@ -1,21 +1,11 @@
 make flt x = 9
-make flt z = 10
 func test [ ] -> void
 {
     global x
     display x
+    x = 2
     
-    make flt y = 5
-    
-    func test_two [ ] -> void
-    {
-        nonlocal y
-        display y
-        global z
-        display z
-    }
-    
-    test_two [ ]
 }
 
 test [ ]
+display x

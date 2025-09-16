@@ -896,6 +896,21 @@ def file_interpreter(syntax_tree, console_index, input_string):
         if 'self.' in element.var.token:
             #variable is saved in parent of function scope; make variables refrenced to current variables so that instance variables get saved
             getattr(current_scope.parent, 'class_vars', {})[element.var.token] = current_scope.variables[element.var.token]
+    #change exisitng variable's value
+    def change_var_value(element):
+        #make sure variable exists
+        var = search_vars(current_scope, element.var.token)
+        #make sure types match
+        if var.type == element.value.token_type:
+            #functions and classes should be handled differently due to not having a "value" attribute
+            if var.type not in { 'function', 'class'}:
+                current_scope.variables[element.var.token][0].value = element.value.token
+            else:
+                current_scope.variables[element.var.token][0] = element.value.token
+        else:
+            #raise error
+            pass
+    #print to screen
     def output_display(element):
         nonlocal variables
         statement = element.value
@@ -978,7 +993,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #raise error
                 pass
         #add any additonal variables (for instance variables)
-        current_scope.variables =current_scope.variables | vars_to_add
+        current_scope.variables = current_scope.variables | vars_to_add
         #run function code
         for statement in func.statement:
             value = run_command(statement)
@@ -1165,8 +1180,29 @@ def file_interpreter(syntax_tree, console_index, input_string):
             else:
                 #raise error
                 pass
-        #cave class as variable
+        elif element.type == 'change_var_value':
+            change_var_value(element)
+        #save class as variable
         elif element.type == 'class':
+            #deal with parent class
+            if element.parent != None:
+                #get parent
+                parent = search_vars(current_scope, element.parent.token)
+                #make sure parent is a class
+                if parent.type == 'class':
+                    #create shallow copy of functions
+                    parent_funcs = parent.functions.copy()
+                    #use shallow copy to change key for __init__ function, but not have to make copied in memory of all functions
+                    if '__init__' in set(parent_funcs.keys()):
+                        #change key for __init__ to parent.__init__
+                        init_func = parent_funcs.pop('__init__')
+                        parent_funcs['parent.__init__'] = init_func
+                    #add parent functions to class list of functions. The child function with have priority for duplicate function
+                    element.functions = parent_funcs | element.functions
+                else:
+                    #raise error
+                    pass
+            #save class to variables
             current_scope.variables[element.name.token] = [element]
         #open file and store it as a string
         elif element.type == 'open_file':

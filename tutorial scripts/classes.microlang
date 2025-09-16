@@ -15,7 +15,28 @@ class basicClass [ ]
         return c
     }
 }
-#make class isntacne
+#make class instance
 make instance classInstance = new basicClass [ 7 , 8 ]
 #run instance function
 make flt x = classInstance . addValues [ 5 ]
+
+#inheritance. Can only inherit one object
+class childClass [ basicClass ]
+{
+    #init function
+    func __init__ [ flt arg3 , flt arg4 ] -> void
+    {
+        #initalise parent
+        parent.__init__ [ arg3 , arg4 ]
+        make flt self.arg3 = arg3
+        make flt self.arg4 = arg4
+    }
+    #other function
+    func subtractValues [ flt value ] -> flt
+    {
+        make flt c = self.arg3 - self.arg4 - value
+        return c
+    }
+}
+
+make instance classWithParent = new childClass [ 0 , 8 ]

@@ -137,6 +137,8 @@ def file_lexer(input_string, console_index):
         keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'as', 'import'}
         types = {'flt', 'str', 'array', 'var', 'bool', 'void', 'instance'}
         booleans = {'True', 'False'}
+        #variables that need to be called but can't be used as normal names
+        special_vars = {'parent.__init__'}
         #token is a string if there has been an even number of quotes found
         if found_quotes != 0 and found_quotes % 2 == 0:
             tokens[-1].append(Token(token, 'str', index - len(current_token), line))
@@ -179,6 +181,9 @@ def file_lexer(input_string, console_index):
             #check if self. variable
             elif 'self.' in token and var_reg.search(token[5:]):
                 tokens[-1].append(Token(token, 'var', index-len(current_token), line))
+            #check if it is a special variable name
+            elif current_token in special_vars:
+                tokens[-1].append(Token(token, 'special_var', index - len(current_token), 0))
             #check if it is a assignment equals; length check makes = assignment but == a compare
             elif assign_reg.search(token) and len(token) == 1:
                 tokens[-1].append(Token(token, 'assign', index - len(current_token), line))

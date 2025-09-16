@@ -11,12 +11,12 @@ func newFunc [ flt arg1 , str arg2 ] -> void
 newFunc [ 5 , 'Hello!' ]
 
 #returning data/variables: can only return one object
-func return_var [ ] -> str
+func return_var [ str hi ] -> str
 {
-    return 'Hi'
+    return hi
 }
 #run function
-make str a = return_var [ ]
+make str a = return_var [ 'hi' ]
 display a
 
 #use global/nonlocal to get variables in other scopes

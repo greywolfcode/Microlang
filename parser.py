@@ -57,9 +57,9 @@ class Nonlocal():
         self.var = var
         self.type = 'nonlocal'
 class Class():
-    def __init__(self, name, parents, objects):
+    def __init__(self, name, parent, objects):
         self.name = name
-        self.parents = parents
+        self.parent = parent
         self.functions = objects
         self.type = 'class'
 class Make_Class_Instance():
@@ -89,6 +89,11 @@ class Make_statement():
         self.var = var
         self.value = value
         self.type = 'make'
+class Change_Var_Value():
+    def __init__(self, var, value):
+        self.var = var
+        self.value = value
+        self.type = "change_var_value"
 class Changer():
     def __init__(self, value, output):
         self.value = value
@@ -1120,13 +1125,16 @@ def file_parser(tokens, console_index, input_string):
         return value
     def create_make():
         '''Makes Make Statement Objects'''
-        nonlocal current_index
-        used = False
         var_type = expect_type('type', console_index)
         var_name = expect_type('var', console_index)
         expect('=', console_index)
+        value = get_var_value(var_type)
+        return var_type, var_name, value
+    def get_var_value(var_type, do_type_check=True):
+        nonlocal current_index
+        used = False
         #allow to get user input set to a variable. This will always be a string, and should be set as so
-        if accept_token('input') and var_type.token == 'str':
+        if accept_token('input') and (var_type.token == 'str' or do_type_check == False):
             if not check_line_end():
                 if accept_type('str'):
                     value = Input(string=expect_type('str', console_index))
@@ -1146,7 +1154,7 @@ def file_parser(tokens, console_index, input_string):
                     value = Custom_Func(name, args)
                     #tell next chain of if statements not to run
                     used = True
-                #for runnign instances of classes
+                #for runnin instances of classes
                 elif accept_token('.'):
                     #decrement current_index, it was increased to run checks
                     current_index -= 2
@@ -1175,13 +1183,15 @@ def file_parser(tokens, console_index, input_string):
         #check if a variable function is being run
         elif accept_type('type') or accept_type('keyword'):
             value = create_run_func()
-        #arrays need to be parsed
+        #arrays need to be parsed. they have to be seperated by type check and not due to current index issues
         elif var_type.token == 'array':
             #check for {
             expect('{', console_index)
             value = create_array()
+        elif accept_token('{') and do_type_check == False:
+            value = create_array()
         #allows equations to be used as input
-        elif var_type.token == 'flt':
+        elif var_type.token == 'flt' or (accept_type('flt') and  do_type_check == False):
             if accept_token('('):
                 current_index -= 1
                 if braketed_expression() == 'equation':
@@ -1198,11 +1208,19 @@ def file_parser(tokens, console_index, input_string):
                 else:
                     #checking for bracketed equation doesn't push up index but should
                     current_index += 1
-                    value = expect_type(var_type.token, console_index)
+                    #check if requiering same type
+                    if do_type_check:
+                        value = expect_type(var_type.token, console_index)
+                    else:
+                        value = tokens[line][current_index]
+        #get remaining value
+        elif do_type_check == False:
+            value = tokens[line][current_index]
+            current_index += 1
         else:
             #check for right type if not array or equation
             value = expect_type(var_type.token, console_index)
-        return var_type, var_name, value
+        return value
     def create_array():
         '''Creates Arrays'''
         nonlocal current_index
@@ -1314,9 +1332,9 @@ def file_parser(tokens, console_index, input_string):
             #raise error
             pass
         return var, for_type, values
-    def create_func(check_type=True):
+    def get_func_args(check_type):
         nonlocal current_index
-        name = expect_type('var', console_index)
+        #check for opening [
         expect('[', console_index)
         #break if no arguments
         args = []
@@ -1338,6 +1356,12 @@ def file_parser(tokens, console_index, input_string):
                 break
             else:
                 expect(',', console_index)
+        return args
+    def create_func(check_type=True):
+        nonlocal current_index
+        name = expect_type('var', console_index)
+        #run arguments getting function
+        args = get_func_args(check_type)
         #return if running the function
         if check_type == False:
             return name, args
@@ -1350,17 +1374,17 @@ def file_parser(tokens, console_index, input_string):
         #get name
         name = expect_type('var', console_index)
         expect('[', console_index)
-        #loop until closing ] is found
-        parents = []
-        while not accept_token(']'):
+        #check for single parent
+        if not accept_token(']'):
             if accept_type('var'):
-                parents.append(expect_type('var', console_index))
-                #check for comma
-            if accept_token(']'):
-                break
+                parent = expect_type('var', console_index)
+                expect(']', console_index)
             else:
-                expect(',', console_index)
-        return name, parents
+                #raise error
+                pass
+        else:
+            parent = None
+        return name, parent
     def create_return():
         nonlocal current_index
         values = []
@@ -1722,6 +1746,7 @@ def file_parser(tokens, console_index, input_string):
     #keep track if it is in a block for block specific commands (nonlocal, break, etc.)
     current_block = ['global']
     def get_element():
+        nonlocal current_index
         #figure out what next token type is
         if accept_type('keyword'):
             st = statement()
@@ -1729,8 +1754,29 @@ def file_parser(tokens, console_index, input_string):
                 element = st
         #check for variable name to run functions
         elif accept_type('var'):
-            name, args= create_func(check_type=False)
-            element = Custom_Func(name, args)
+            #increase index to check for equals
+            current_index += 1
+            #check if changing variable type
+            if accept_token("="):
+                #decrement by 2 to get variable name
+                current_index -= 2
+                var = expect_type('var', console_index)
+                expect('=', console_index)
+                #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked
+                value = get_var_value(var, do_type_check=False)
+                element = Change_Var_Value(var, value)
+            else:
+                current_index -= 1
+                name, args= create_func(check_type=False)
+                element = Custom_Func(name, args)
+        #check for special case variables
+        elif accept_type('special_var'):
+            #initalising parent of class
+            if accept_token('parent.__init__'):
+                current_index -= 1
+                name = expect_type('special_var', console_index)
+                args = get_func_args(False)
+                element = Custom_Func(name, args)
         #move to next line if at end of current line
         change_line_end()
         return element
