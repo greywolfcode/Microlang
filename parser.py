@@ -151,6 +151,13 @@ class Input():
     def __init__(self, string=Token('', 'str')):
         self.type = 'input'
         self.string = string
+class String_Slice():
+    def __init__(self, var, start, stop, step):
+        self.var = var
+        self.start = start
+        self.stop = stop
+        self.step = step
+        self.type = 'string_slice'
 #main parser function
 def parser(tokens, console_index, input_string):
     #line will be contained in a list
@@ -1142,6 +1149,7 @@ def file_parser(tokens, console_index, input_string):
                     value = Input()
             else:
                 value = Input()
+            used = True
         #check if running function/setting to variable
         elif accept_type('var'):
             current_index += 1
@@ -1154,7 +1162,7 @@ def file_parser(tokens, console_index, input_string):
                     value = Custom_Func(name, args)
                     #tell next chain of if statements not to run
                     used = True
-                #for runnin instances of classes
+                #for running instances of classes
                 elif accept_token('.'):
                     #decrement current_index, it was increased to run checks
                     current_index -= 2
@@ -1166,6 +1174,26 @@ def file_parser(tokens, console_index, input_string):
                     value = Class_Func(instance, name, args)
                     #tell next chain of if statements to not run
                     used = True
+                #for string slicing
+                elif accept_token('('):
+                    #decrement current_index, it was increased to run the checks
+                    current_index -= 2
+                    #get variable to slice
+                    var = expect_type('var', console_index)
+                    expect('(', console_index)
+                    #uses same slicing syntax as python
+                    start = expect_type('flt', console_index)
+                    expect(':', console_index)
+                    stop = expect_type('flt', console_index)
+                    #check for step or end
+                    if accept_token(')'):
+                        step = Token(1, 'flt')
+                        used = True
+                    else:
+                        expect(':', console_index)
+                        step = expect_type('flt', console_index)
+                        used = True
+                    value = String_Slice(var, start, stop, step)
                 else:
                     #decrease current index so next options work properly
                     current_index -= 1
@@ -1254,17 +1282,17 @@ def file_parser(tokens, console_index, input_string):
     def create_run_func():
         '''Create Changer Object'''
         nonlocal current_index
-        #custom function
-        if accept_type('var'):
-            pass
         #change type of variable
-        elif accept_type('type'):
+        if accept_type('type'):
             output = expect_type('type', console_index)
         #functions on variables
         elif accept_token('len'):
             output = tokens[line][current_index - 1]
         #get type of variable
         elif accept_token('type'):
+            output = tokens[line][current_index - 1]
+        #create linked variables
+        elif accept_token('link'):
             output = tokens[line][current_index - 1]
         else:
             print(f'[Out_{console_index}]: Type Error: {tokens[line][current_index].token} is not a valid type to be converted')

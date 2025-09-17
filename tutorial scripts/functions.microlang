@@ -30,7 +30,7 @@ func useGlobal [ ] -> void
     
     make flt c = 10
     
-    #create child function
+    #create nested function
     func useNonlocalAndGlobal [ ] -> void
     {
         #get b and c
@@ -39,7 +39,7 @@ func useGlobal [ ] -> void
         display b
         display c
     }
-    #run child function
+    #run nested function
     useNonlocalAndGlobal [ ]
 }
 #run function

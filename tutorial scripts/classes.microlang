@@ -8,7 +8,7 @@ class basicClass [ ]
         make flt self.arg1 = arg1
         make flt self.arg2 = arg2
     }
-    #other functions
+    #other functions. Any function (even nested) inside a class can modify instance variables
     func addValues [ flt value ] -> flt
     {
         make flt c = self.arg1 + self.arg2 + value
@@ -27,7 +27,7 @@ class childClass [ basicClass ]
     func __init__ [ flt arg3 , flt arg4 ] -> void
     {
         #initalise parent
-        parent.__init__ [ arg3 , arg4 ]
+        parent.__init__ [ 4 , arg3 ]
         make flt self.arg3 = arg3
         make flt self.arg4 = arg4
     }
@@ -38,5 +38,8 @@ class childClass [ basicClass ]
         return c
     }
 }
-
-make instance classWithParent = new childClass [ 0 , 8 ]
+#make class instance
+make instance classInstanceWithInheritance = new childClass [ 7 , 9 ]
+#run functions from child class and parent class
+make flt y = classInstanceWithInheritance . subtractValues [ 9 ]
+make flt z = classInstanceWithInheritance . addValues [ 9 ]

@@ -2,17 +2,14 @@
 #fix all remaining bugs :)
 #make error correction code point to the correct spot in the input string
 #single raise error function
-#fill in all missing areas requireing raise error
+#fill in all missing areas requireing a raise error
 #raise error in parser if elif/else do not have a parent
 #add try: except: block
-
-#get section of string
-#get items from array
-#make parents for classes work
-#retrive/modify variables in classes
-#allow copying variables to create non linked copy of them
-#make classes in classes work
 #line stored in token by lexer is 1 to low (Off By One error?)
+
+#retrieve/modify items from array
+#retrive/modify variables in classes
+#make classes in classes work
 
 #import standerd libraries
 import traceback

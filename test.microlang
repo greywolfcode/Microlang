@@ -1,11 +1,5 @@
-make flt x = 9
-func test [ ] -> void
-{
-    global x
-    display x
-    x = 2
-    
-}
+make str a = 'Hello, World!'
 
-test [ ]
-display x
+make str b = a ( 0 : 10 : 2 )
+
+display b

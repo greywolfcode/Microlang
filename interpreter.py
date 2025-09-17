@@ -74,8 +74,7 @@ def search_vars(current_scope, variable, all_scopes=True, give_value=True):
     if variable in set(current_scope.variables.keys()):
         #allows getting mutable list oject to gat refrence to it
         if give_value == True:
-            #using lists for a mutable data type, so have to get 1st item in the list
-            return current_scope.variables[variable][0]
+            return current_scope.variables[variable]
         else:
             return current_scope.variables[variable]
     #check if there is no parent, or if it shouldn't search parent scopes
@@ -539,7 +538,8 @@ def interpreter(syntax_tree, console_index, input_string):
             #make sure variable exists
             if element.value.token in set(variables.keys()):
                 var_type = variables[element.value.token].type
-                value = variables[element.value.token].value
+                #make sure variables are not linked
+                value = copy.deepcopy(variables[element.value.token].value)
                 #can pull proper values straight from other variable
                 variables[element.var.token] = Variable(var_type, value)
                 print(f'[Out_{console_index}]: {"Done"}')
@@ -779,6 +779,15 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 else:
                     if element.value.type in {'array', 'str'}:
                         return Token(len(element.value.token), 'flt')
+            #create linked variables
+            elif element.output.token == 'link':
+                if element.value.token_type == 'var':
+                    #get variable
+                    var = search_vars(current_scope, element.value.token)
+                    return var
+                else:
+                    #raise error
+                    pass
     def interpret_comp(comp):
         '''Return boolean value of a Comparison'''
         def get_token(token):
@@ -813,60 +822,81 @@ def file_interpreter(syntax_tree, console_index, input_string):
         comp_op = comp.comp_op.token
         return eval(f'{left} {comp_op} {right}')
     def set_vars(element):
+        value = get_var_value(element.var_type, element.value)
+        #save variable
+        current_scope.variables[element.var.token]  = value
+        #modify variables in class instances
+        if 'self.' in element.var.token:
+            #variable is saved in parent of function scope; make variables refrenced to current variables so that instance variables get saved
+            getattr(current_scope.parent, 'class_vars', {})[element.var.token] = current_scope.variables[element.var.token]
+    def get_var_value(var_type, value):
         #get variable value if setting a variable to another variable
-        if element.var_type.token == 'var':
+        if var_type.token == 'var':
             #make sure variable exists
-            var = search_vars(current_scope, element.value.token)
-            var_type = var.type
-            result = var.value
+            var = search_vars(current_scope, value.token)
             #can pull proper values straight from other variable
-            value = Variable(var_type, result)
-        elif element.value.type == 'run_func':
+            value = copy.deepcopy('var')
+        elif value.type == 'run_func':
             #get changer token
-            result = run_func(element.value)
-            if result.token_type == element.var_type.token:
+            result = run_func(value)
+            #check if a variable object is returned
+            if isinstance(result, Variable):
+                #check if types match
+                if result.type == var_type.token:
+                    value = result
+            elif result.token_type == var_type.token:
                 #no longer need the token stuff in variable class
-                value = Variable(element.var_type.token, result.token)
+                value = Variable(var_type.token, result.token)
             else:
-                print(f'[Out_{console_index}]: Type Error: {value.token_type} is not a {element.var_type.token}')
+                print(f'[Out_{console_index}]: Type Error: {value.token_type} is not a {var_type.token}')
                 out_length = len(f'[Out_{console_index}]: ')
                 print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
+                print(' ' * out_length + ' ' * (value.location - len(value.token)) + '^' * len(value.token))
                 raise Interpreter_Error('')
-        elif element.value.type == 'custom_func':
+        elif value.type == 'custom_func':
             #run function and get value
-            result = custom_func(element.value)
+            result = custom_func(value)
             #make sure type matches
-            if result.token_type == element.var_type.token:
-                value = Variable(element.var_type.token, result.token)
+            if result.token_type == var_type.token:
+                value = Variable(var_type.token, result.token)
             else:
                 #raise error
                 pass
-        elif element.value.type == 'make_class_instance':
-            instance_class = search_vars(current_scope, element.value.name.token)
+        elif value.type == 'make_class_instance':
+            instance_class = search_vars(current_scope, value.name.token)
             instance = Class_Instance(instance_class, {})
             #check if there is an init function
             if '__init__' in set(instance_class.functions.keys()):
                 #run using run function class
-                run_class_func_init(instance_class.functions['__init__'], element.value, instance.instance_vars)
+                run_class_func_init(instance_class.functions['__init__'],value, instance.instance_vars, instance.instance_class.functions)
                 #remove reference to instance variables in current_scope
                 del current_scope.class_vars
             value = instance
-        elif element.value.type == 'class_func':
-            result = run_class_func(element.value)
-            value = Variable(element.var_type.token, result.token)
+        elif value.type == 'class_func':
+            result = run_class_func(value)
+            value = Variable(var_type.token, result.token)
             #remove refrence to instance variables in current_scope
             del current_scope.class_vars
-        elif element.value.type == 'equation':
+        elif value.type == 'string_slice':
+             var = search_vars(current_scope, value.var.token)
+             #make sure value is a string
+             if var.type == 'str':
+                 #use normal python string slicing to slice the value
+                 string = var.value[int(value.start.token):int(value.stop.token):int(value.step.token)]
+                 value = Variable('str', string)
+             else:
+                 #raise error
+                 pass
+        elif value.type == 'equation':
             #no longer need the token stuff in token class
-            num = interpret_equation(element.value.postfix)
-            value = Variable(element.var_type.token, num.token)
+            num = interpret_equation(value.postfix)
+            value = Variable(var_type.token, num.token)
         #edit arrays so that varibles are converted to their own values 
-        elif element.var_type.token == 'array':
+        elif var_type.token == 'array':
             #convert values inside arrays
-            converted_array = copy.deepcopy(element.value.token)
+            converted_array = copy.deepcopy(value.token)
             #iterate through origional array and change values in the new array
-            for num in range(len(element.value.token)):
+            for num in range(len(value.token)):
                 #check for variables
                 if converted_array[num].token_type == 'var':
                     #ensure variable exists
@@ -874,42 +904,43 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     #create new token in array based on variable value
                     converted_array[num] = Token(variables[converted_array[num].token].value, variables[converted_array[num].token].type) 
             #add variable to dictionary of variables
-            value = Variable(element.var_type.token, converted_array)
-        elif element.value.type == 'input':
+            value = Variable(var_type.token, converted_array)
+        elif value.type == 'input':
             #gets input from the user
-            value = Variable(element.var_type.token, get_input(element.value.string))
-        elif element.value.token_type == 'var':
+            value = Variable(var_type.token, get_input(value.string))
+        elif value.token_type == 'var':
             #get var
-            var = search_vars(current_scope, element.value.token)
+            var = search_vars(current_scope, value.token)
             #make sure types match
-            if element.var_type.token == var.type:
-                value = var
+            if var_type.token == var.type:
+                #values should not be linked
+                value = copy.deepcopy(var)
             else:
                 #raise error
                 pass
         else:
             #no longer need the token stuff in token class
-            value = Variable(element.var_type.token, element.value.token)
-        #save variable
-        current_scope.variables[element.var.token]  = [value]
-        #modify variables in class instances
-        if 'self.' in element.var.token:
-            #variable is saved in parent of function scope; make variables refrenced to current variables so that instance variables get saved
-            getattr(current_scope.parent, 'class_vars', {})[element.var.token] = current_scope.variables[element.var.token]
+            value = Variable(var_type.token, value.token)
+        return value
     #change exisitng variable's value
     def change_var_value(element):
+        '''Change an existing variable's value'''
         #make sure variable exists
         var = search_vars(current_scope, element.var.token)
-        #make sure types match
-        if var.type == element.value.token_type:
-            #functions and classes should be handled differently due to not having a "value" attribute
-            if var.type not in { 'function', 'class'}:
-                current_scope.variables[element.var.token][0].value = element.value.token
-            else:
-                current_scope.variables[element.var.token][0] = element.value.token
+        #functions and classes should be handled differently due to not having a "value" attribute
+        if var.type not in {'function', 'class', 'instance'}:
+            #make sure types match and get value
+            value = get_var_value(Token(var.type, 'type'), element.value)
+            current_scope.variables[element.var.token].value = value.value
         else:
-            #raise error
+            #raise error 
             pass
+    def free_var(element):
+        '''Free a variable from memory'''
+        nonlocal variables 
+        #delete variable if it exists, otherwise raise an error
+        var = search_vars(current_scope, element.var.token)
+        del current_scope.variables[element.var.token]
     #print to screen
     def output_display(element):
         nonlocal variables
@@ -938,12 +969,6 @@ def file_interpreter(syntax_tree, console_index, input_string):
             print(print_array)
         else:
             print(statement.token)
-    def free_var(element):
-        '''Free a variable from memory'''
-        nonlocal variables 
-        #delete variable if it exists, otherwise raise an error
-        var = search_vars(current_scope, element.var.token)
-        del current_scope.variables[element.var.token]
     def get_input(string):
         return input(string.token)
     def run_class_func(element):
@@ -954,7 +979,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #add refrence to isntance vars in current_scope
             current_scope.class_vars = instance.instance_vars
             #retrive and run the function
-            value = run_class_func_init(instance.instance_class.functions[element.name.token], element, instance.instance_vars)
+            value = run_class_func_init(instance.instance_class.functions[element.name.token], element, instance.instance_vars, instance.instance_class.functions)
         else:
             #raise error
             pass
@@ -969,12 +994,14 @@ def file_interpreter(syntax_tree, console_index, input_string):
         else:
             #raise error
             pass
-    def run_class_func_init(func, element, instance_vars):
+    def run_class_func_init(func, element, instance_vars, instance_funcs):
         nonlocal current_scope
         #allow modification to instance vars
         current_scope.class_vars = instance_vars
+        #both functions and variables need to be added to the function scope
+        vars_to_add = instance_vars | instance_funcs
         #run function running function
-        return run_custom_func(func, element, instance_vars)
+        return run_custom_func(func, element, vars_to_add=vars_to_add)
     #seperate function to run custom functions to make classes easier
     def run_custom_func(func, element, vars_to_add={}):
         nonlocal current_scope
@@ -983,12 +1010,29 @@ def file_interpreter(syntax_tree, console_index, input_string):
         current_scope = new_scope
         #add return type to current scope
         current_scope.return_type = func.return_type
+        #if parent scope has class variables, propogate them to new scope
+        try:
+            current_scope.class_vars = current_scope.parent.class_vars
+        except:
+            pass
         #iterate through args and add them to variables
         for num, arg in enumerate(func.args):
-            #try except in case not enough argumetns were provided
+            #try except in case not enough arguments were provided
             try:
                 if element.args[num].token_type == arg['type'].token:
-                    current_scope.variables[arg['name'].token] = [Variable(arg['type'].token, element.args[num].token)]
+                    current_scope.variables[arg['name'].token] = Variable(arg['type'].token, element.args[num].token)
+                #handle inputted variables
+                elif element.args[num].token_type == 'var':
+                    #get var
+                    var = search_vars(current_scope, element.args[num].token)
+                    if var.type == arg['type'].token:
+                        current_scope.variables[arg['name'].token] = Variable(arg['type'].token, var.value)
+                    else:
+                        #raise error
+                        pass
+                else:
+                    #raise error
+                    pass
             except:
                 #raise error
                 pass
@@ -1145,7 +1189,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                             return value
         elif element.type == 'function':
             #saving function to variable
-            current_scope.variables[element.name.token] = [element]
+            current_scope.variables[element.name.token] = element
         #make global variable useable in function
         elif element.type == 'global':
             #loop until global scope is found
@@ -1202,8 +1246,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 else:
                     #raise error
                     pass
-            #save class to variables
-            current_scope.variables[element.name.token] = [element]
+            current_scope.variables[element.name.token] = element
         #open file and store it as a string
         elif element.type == 'open_file':
             #open file
@@ -1214,7 +1257,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #raise error
                 pass
             #save file as var
-            current_scope.variables[element.var.token] = [Variable('str', file)]
+            current_scope.variables[element.var.token] = Variable('str', file)
     #loop through all sections of tree
     for tree in syntax_tree:
         run_command(tree)

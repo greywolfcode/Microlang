@@ -7,10 +7,14 @@ make bool c = True
 make bool d = False
 #make array
 make array e = { 5 , True , 'Hi' , { 'Array' } , 9 }
-#assign from another variable - will inherit previous
+#this can be used to allow another variable to get the type and value of another variable without specifying it
+#this is not recomended if possible
 make var g = e
-#for big scripts, it is recomended to free variables to save memory
-free e
 
+#for big scripts, it is recomended to free variables to save remove them from memory
+free e
 #change variable name after initalisation -must change to same type
 a = 78
+
+#make a variable linked to the same memory space
+make flt b = link [ a ]

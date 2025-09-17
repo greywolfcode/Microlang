@@ -127,14 +127,22 @@ def lexer(input_string, console_index):
 #function to split input into tokens
 def file_lexer(input_string, console_index):
     comment = False
+    block_comment = False
     current_token = ''
     tokens = []
     found_quotes = 0
     #helper function to add tokens
     def add_token(token, index):
         #adds token to current row, as that will be the last one added
-        nonlocal tokens, line
-        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'as', 'import'}
+        nonlocal tokens, line, block_comment
+        #if inside a block comment, discard everything
+        if block_comment == True:
+            #check if closing symbol is  in the current token
+            if '/#'  in current_token:
+                block_comment = False
+            else:
+                return True
+        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'as', 'import', 'link'}
         types = {'flt', 'str', 'array', 'var', 'bool', 'void', 'instance'}
         booleans = {'True', 'False'}
         #variables that need to be called but can't be used as normal names
@@ -152,10 +160,14 @@ def file_lexer(input_string, console_index):
             compare_reg = re.compile(r'^[==]+$|^[!=]+$|^[<=]+$|^[>=]+$|^[<]+$|^[>]+$')
             container_reg = re.compile(r'^[{]+$|^[}]+$')
             orderer_reg = re.compile(r'^[(]+$|^[)]+$')
-            seperator_reg = re.compile(r'^[,]+$')
+            seperator_reg = re.compile(r'^[,]+$|^[:]+$')
             changer_reg = re.compile(r'^[\[]+$|^[\]]+$')
+            #check for block comment
+            if '#/' in current_token:
+                block_comment = True
+                return True
             #check if it is a comment. Strings are checked first, so it won't interfere
-            if '#' in current_token:
+            elif '#' in current_token:
                 return True
             #check if it is one of the keywords
             elif current_token in keywords:

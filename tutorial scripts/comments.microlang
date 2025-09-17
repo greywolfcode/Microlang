@@ -1,1 +1,6 @@
 #this is a comment!
+
+#/ This is a block comment
+   so the code here:
+   display 6
+   will not run/#

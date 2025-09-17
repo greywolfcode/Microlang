@@ -1,0 +1,11 @@
+#slicing values follow Python's format
+#Unlike Python, must have a start and stop
+
+#make string variable
+make str a = 'Hello, World!'
+
+#slicing using start:stop
+make str b = a ( 2 : 10 )
+
+#slicing using start:stop:step
+make str c = a ( 2 : 10 : 2 )
