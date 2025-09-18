@@ -10,14 +10,14 @@ while x > 1 do
     make flt d_by_two = x % 2
     if d_by_two == 0 then
     {
-        x = x / 2
+        make flt x = x / 2
     }
     else
     {
-        x = ( 3 * x ) + 1
+        make flt x = ( 3 * x ) + 1
     }
     display x
-    count = count + 1
+    make flt count = count + 1
 }
 #display stopping time
 display 'Stopping time: '

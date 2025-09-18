@@ -1,3 +1,5 @@
+#variables can have a-z, A-Z, 0-9 and _ as part of valid variable names
+
 #assign float
 make flt a = 4
 #assing string
@@ -13,6 +15,7 @@ make var g = e
 
 #for big scripts, it is recomended to free variables to save remove them from memory
 free e
+
 #change variable name after initalisation -must change to same type
 a = 78
 

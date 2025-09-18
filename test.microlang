@@ -1,5 +1,4 @@
-make str a = 'Hello, World!'
 
-make str b = a ( 0 : 10 : 2 )
-
+make array a = { 0 , 'hello' }
+make str b = a ( 1 ) ( 1 : 4 )
 display b

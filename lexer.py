@@ -138,7 +138,7 @@ def file_lexer(input_string, console_index):
         #if inside a block comment, discard everything
         if block_comment == True:
             #check if closing symbol is  in the current token
-            if '/#'  in current_token:
+            if '/#'  in token:
                 block_comment = False
             else:
                 return True
@@ -163,17 +163,17 @@ def file_lexer(input_string, console_index):
             seperator_reg = re.compile(r'^[,]+$|^[:]+$')
             changer_reg = re.compile(r'^[\[]+$|^[\]]+$')
             #check for block comment
-            if '#/' in current_token:
+            if '#/' in token:
                 block_comment = True
                 return True
             #check if it is a comment. Strings are checked first, so it won't interfere
             elif '#' in current_token:
                 return True
             #check if it is one of the keywords
-            elif current_token in keywords:
+            elif token in keywords:
                 tokens[-1].append(Token(token, 'keyword', index - len(current_token), line))
             #check if it is a type
-            elif current_token in types:
+            elif token in types:
                 tokens[-1].append(Token(token, 'type', index - len(current_token), line))
             #check if it is a changer seperator
             elif changer_reg.search(token):
@@ -227,6 +227,7 @@ def file_lexer(input_string, console_index):
                     print(' ' * out_length + ' ' * (index - len(current_token)) + '^')
                     raise Lexer_Error('Missing Quote')
                 else:
+                    print(current_token)
                     out_length = len(f'[Out_{index}]: ')
                     print(f'[Out_{console_index}]: Syntax Error: Invalid Syntax. Missing Space?')
                     print(' ' * out_length + input_string)

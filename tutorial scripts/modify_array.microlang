@@ -1,0 +1,9 @@
+#make new array
+make array arrayToModify = { 5 , 0 ,  1 }
+#modify 2nd value of array
+arrayToModify ( 1 ) = 8
+
+#make 2d array
+make array twoDArray = {  { 1 , 2 , 3 } , { 4 , 7 , 6 } }
+#modify 2nd value of 2nd array
+twoDArray ( 1 ) ( 1 ) = 5

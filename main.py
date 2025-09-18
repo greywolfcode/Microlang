@@ -7,7 +7,7 @@
 #add try: except: block
 #line stored in token by lexer is 1 to low (Off By One error?)
 
-#retrieve/modify items from array
+#modify items from array
 #retrive/modify variables in classes
 #make classes in classes work
 

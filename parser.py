@@ -90,9 +90,11 @@ class Make_statement():
         self.value = value
         self.type = 'make'
 class Change_Var_Value():
-    def __init__(self, var, value):
+    def __init__(self, var, value, indexes):
         self.var = var
         self.value = value
+        #incase of modifying an array
+        self.indexes = indexes
         self.type = "change_var_value"
 class Changer():
     def __init__(self, value, output):
@@ -158,6 +160,11 @@ class String_Slice():
         self.stop = stop
         self.step = step
         self.type = 'string_slice'
+class Get_Array_Value():
+    def __init__(self, var, index):
+        self.var = var
+        self.index = index
+        self.type = 'get_array_value'
 #main parser function
 def parser(tokens, console_index, input_string):
     #line will be contained in a list
@@ -1137,6 +1144,25 @@ def file_parser(tokens, console_index, input_string):
         expect('=', console_index)
         value = get_var_value(var_type)
         return var_type, var_name, value
+    def string_array_retrieving(var):
+        '''Create get array value/string slicing objects'''
+        #uses same slicing syntax as python
+        start = expect_type('flt', console_index)
+        #check for string slicing (:) or array value ( ) )
+        if accept_token(')'):
+            value = Get_Array_Value(var, start)
+        else:
+            expect(':', console_index)
+            stop = expect_type('flt', console_index)
+            #check for step or end
+            if accept_token(')'):
+                step = Token(1, 'flt')
+            else:
+                expect(':', console_index)
+                step = expect_type('flt', console_index)
+                expect(')', console_index)
+            value = String_Slice(var, start, stop, step)
+        return value
     def get_var_value(var_type, do_type_check=True):
         nonlocal current_index
         used = False
@@ -1178,22 +1204,19 @@ def file_parser(tokens, console_index, input_string):
                 elif accept_token('('):
                     #decrement current_index, it was increased to run the checks
                     current_index -= 2
-                    #get variable to slice
-                    var = expect_type('var', console_index)
+                    #get variable to slice/get array value from
+                    value = expect_type('var', console_index)
+                    #loop to get multi dimensional arrays
                     expect('(', console_index)
-                    #uses same slicing syntax as python
-                    start = expect_type('flt', console_index)
-                    expect(':', console_index)
-                    stop = expect_type('flt', console_index)
-                    #check for step or end
-                    if accept_token(')'):
-                        step = Token(1, 'flt')
-                        used = True
-                    else:
-                        expect(':', console_index)
-                        step = expect_type('flt', console_index)
-                        used = True
-                    value = String_Slice(var, start, stop, step)
+                    while True:
+                        #get object
+                        value = string_array_retrieving(value)
+                        #break if at end of the line
+                        if check_line_end():
+                            break
+                        else:
+                            expect('(', console_index)
+                    used = True
                 else:
                     #decrease current index so next options work properly
                     current_index -= 1
@@ -1785,14 +1808,26 @@ def file_parser(tokens, console_index, input_string):
             #increase index to check for equals
             current_index += 1
             #check if changing variable type
-            if accept_token("="):
+            if accept_token("=") or accept_token('('):
                 #decrement by 2 to get variable name
                 current_index -= 2
                 var = expect_type('var', console_index)
+                #check for modifying array values
+                indexes = None
+                if accept_token('('):
+                    indexes = []
+                    #loop until no more indexes are found
+                    while True:
+                        index = expect_type('flt', console_index)
+                        indexes.append(index)
+                        expect(')', console_index)
+                        #break if new index is not found
+                        if not accept_token('('):
+                            break
                 expect('=', console_index)
                 #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked
                 value = get_var_value(var, do_type_check=False)
-                element = Change_Var_Value(var, value)
+                element = Change_Var_Value(var, value, indexes)
             else:
                 current_index -= 1
                 name, args= create_func(check_type=False)

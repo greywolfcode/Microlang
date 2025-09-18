@@ -829,20 +829,51 @@ def file_interpreter(syntax_tree, console_index, input_string):
         if 'self.' in element.var.token:
             #variable is saved in parent of function scope; make variables refrenced to current variables so that instance variables get saved
             getattr(current_scope.parent, 'class_vars', {})[element.var.token] = current_scope.variables[element.var.token]
-    def get_var_value(var_type, value):
+    def get_array_value(var, index):
+        #check if there are nested values to retrieve
+        if var.type == 'get_array_value':
+            #recursively get next value in the chain 
+            return get_array_value(var.var, var.index).token[int(index.token)] 
+        else:
+            #get variable
+            var = search_vars(current_scope, var.token)
+            return var.value[int(index.token)]
+    def slice_string(value):
+        #check if slicing is attached to an array
+        if value.var.type == 'get_array_value':
+            var = get_array_value(value.var.var, value.var.index)
+            #make var into variable object for processing below
+            var = Variable(var.token_type, var.token)
+        else:
+            var = search_vars(current_scope, value.var.token)
+        #make sure value is a string
+        if var.type == 'str':
+            #use normal python string slicing to slice the value
+            string = var.value[int(value.start.token):int(value.stop.token):int(value.step.token)]
+            value = Variable('str', string)
+        else:
+            #raise error
+            pass
+        return value
+    def get_var_value(var_type, value, ignore_type=False):
         #get variable value if setting a variable to another variable
         if var_type.token == 'var':
-            #make sure variable exists
-            var = search_vars(current_scope, value.token)
-            #can pull proper values straight from other variable
-            value = copy.deepcopy('var')
+            #check if it is coming from an array
+            if value.type == 'get_array_value':
+                result = get_array_value(value.var, value.index)
+                value = Variable(result.token_type, result.token)
+            else:
+                #make sure variable exists
+                var = search_vars(current_scope, value.token)
+                #can pull proper values straight from other variable
+                value = copy.deepcopy('var')
         elif value.type == 'run_func':
             #get changer token
             result = run_func(value)
             #check if a variable object is returned
             if isinstance(result, Variable):
                 #check if types match
-                if result.type == var_type.token:
+                if result.type == var_type.token or ignore_type:
                     value = result
             elif result.token_type == var_type.token:
                 #no longer need the token stuff in variable class
@@ -857,7 +888,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #run function and get value
             result = custom_func(value)
             #make sure type matches
-            if result.token_type == var_type.token:
+            if result.token_type == var_type.token or ignore_type:
                 value = Variable(var_type.token, result.token)
             else:
                 #raise error
@@ -868,7 +899,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #check if there is an init function
             if '__init__' in set(instance_class.functions.keys()):
                 #run using run function class
-                run_class_func_init(instance_class.functions['__init__'],value, instance.instance_vars, instance.instance_class.functions)
+                run_class_func_init(instance_class.functions['__init__'], value, instance.instance_vars, instance.instance_class.functions)
                 #remove reference to instance variables in current_scope
                 del current_scope.class_vars
             value = instance
@@ -878,15 +909,11 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #remove refrence to instance variables in current_scope
             del current_scope.class_vars
         elif value.type == 'string_slice':
-             var = search_vars(current_scope, value.var.token)
-             #make sure value is a string
-             if var.type == 'str':
-                 #use normal python string slicing to slice the value
-                 string = var.value[int(value.start.token):int(value.stop.token):int(value.step.token)]
-                 value = Variable('str', string)
-             else:
-                 #raise error
-                 pass
+            value = slice_string(value)
+        elif value.type == 'get_array_value':
+            #run function to get array value
+            result = get_array_value(value.var, value.index)
+            value = Variable(result.token_type, result.token)
         elif value.type == 'equation':
             #no longer need the token stuff in token class
             num = interpret_equation(value.postfix)
@@ -922,6 +949,22 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #no longer need the token stuff in token class
             value = Variable(var_type.token, value.token)
         return value
+    def modify_array(array, indexes, value):
+        #check if there are still indexes
+        if len(indexes) != 0:
+            #make sure array is array type
+            if array.type == 'array':
+                array.value[int(indexes[0].token)] = modify_array.value[int(indexes[0]).token, indexes[1:], value]
+                return array
+            #catch if array is a token
+            elif array.token_type == 'array':
+                array.token[int(indexes[0].token)] =  modify_array(array.token[int(indexes[0].token)], indexes[1:], value)
+                return array
+            else:
+                #raise error
+                pass
+        else:
+            return value
     #change exisitng variable's value
     def change_var_value(element):
         '''Change an existing variable's value'''
@@ -929,9 +972,21 @@ def file_interpreter(syntax_tree, console_index, input_string):
         var = search_vars(current_scope, element.var.token)
         #functions and classes should be handled differently due to not having a "value" attribute
         if var.type not in {'function', 'class', 'instance'}:
-            #make sure types match and get value
-            value = get_var_value(Token(var.type, 'type'), element.value)
-            current_scope.variables[element.var.token].value = value.value
+            #check if modifying array
+            if element.indexes != None:
+                array = search_vars(current_scope, element.var.token)
+                #type doens't matter, it will be ignored
+                value = get_var_value(Token('flt', 'type'), element.value, ignore_type=True)
+                #convert variable to token if required
+                if isinstance(value, Variable):
+                    value = Token(value.value, value.type)
+                #call function to modify array
+                array.value[int(element.indexes[0].token)] = modify_array(array.value[int(element.indexes[0].token)], element.indexes[1:], value)
+            #make sure types match
+            elif value.type == var.type:
+                #get the new value
+                value = get_var_value(Token(var.type, 'type'), element.value)
+                current_scope.variables[element.var.token].value = value.value
         else:
             #raise error 
             pass
