@@ -43,3 +43,9 @@ make instance classInstanceWithInheritance = new childClass [ 7 , 9 ]
 #run functions from child class and parent class
 make flt y = classInstanceWithInheritance . subtractValues [ 9 ]
 make flt z = classInstanceWithInheritance . addValues [ 9 ]
+
+#retrieve value from class
+make flt w = classInstanceWithInheritance . arg3
+display w
+#change value in class
+#classInstanceWithInheritance . arg3 = 9

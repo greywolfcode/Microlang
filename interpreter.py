@@ -855,6 +855,20 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #raise error
             pass
         return value
+    def get_class_value(value):
+        #get class instance 
+        instance = search_vars(current_scope, value.instance.token)
+        #make sure variable is an instance of a class
+        if instance.type == 'class_instance':
+            #make sure class has correct variable
+            if 'self.' + value.var.token in set(instance.instance_vars.keys()):
+                return instance.instance_vars['self.' + value.var.token]
+            else:
+                #raise error
+                pass
+        else:
+            #raise error
+            pass
     def get_var_value(var_type, value, ignore_type=False):
         #get variable value if setting a variable to another variable
         if var_type.token == 'var':
@@ -867,6 +881,8 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 var = search_vars(current_scope, value.token)
                 #can pull proper values straight from other variable
                 value = copy.deepcopy('var')
+        elif value.type == 'get_class_value':
+            value = get_class_value(value)
         elif value.type == 'run_func':
             #get changer token
             result = run_func(value)
@@ -1313,6 +1329,23 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 pass
             #save file as var
             current_scope.variables[element.var.token] = Variable('str', file)
+        #save variable to document
+        elif element.type == 'save_file':
+            #get variable
+            var = search_vars(current_scope, element.var.token)
+            #prepare variable to save
+            if var.type == 'str' or var.type == 'bool':
+                value = var.value
+            elif var.type == 'flt':
+                value = str(var.value)
+            elif var.type == 'array':
+                value = convert_array_tokens(var.value)
+            else:
+                #raise error
+                pass
+            #open and save to file
+            with open(element.path.token, 'w') as file:
+                file.write(value)
     #loop through all sections of tree
     for tree in syntax_tree:
         run_command(tree)

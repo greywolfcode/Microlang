@@ -62,6 +62,11 @@ class Class():
         self.parent = parent
         self.functions = objects
         self.type = 'class'
+class Get_Class_Value():
+    def __init__(self, instance, var):
+        self.instance = instance
+        self.var = var
+        self.type = 'get_class_value'
 class Make_Class_Instance():
     def __init__(self, name, args):
         self.name = name
@@ -106,6 +111,11 @@ class Open_File():
         self.path = path
         self.var = var
         self.type = 'open_file'
+class Save_File():
+    def __init__(self, var, path):
+        self.var = var
+        self.path = path 
+        self.type = 'save_file'
 class Run_Func():
     '''Functions on variable objects'''
     def __init__(self, value, output):
@@ -1196,8 +1206,25 @@ def file_parser(tokens, console_index, input_string):
                     instance = expect_type('var', console_index)
                     #pass over period
                     expect('.', console_index)
-                    name, args = create_func(check_type=False)
-                    value = Class_Func(instance, name, args)
+                    #check if retreiving variable or running function
+                    current_index += 1
+                    #if at line end, don't bother checking for function
+                    if check_line_end():
+                        #retrieve variable_name
+                        current_index -= 1
+                        var = expect_type('var', console_index)
+                        value = Get_Class_Value(instance, var)
+                    else:
+                        if accept_token('['):
+                            #decrement current_index (accept_token increases current_index)
+                            current_index -= 2
+                            name, args = create_func(check_type=False)
+                            value = Class_Func(instance, name, args)
+                        else:
+                            #retrieve variable name
+                            current_index -= 1
+                            var = expect_type('var', console_index)
+                            value = Get_Class_Value(instance, var)
                     #tell next chain of if statements to not run
                     used = True
                 #for string slicing
@@ -1722,6 +1749,12 @@ def file_parser(tokens, console_index, input_string):
                 expect('as', console_index)
                 var = expect_type('var', console_index)
                 return Open_File(path, var)
+            #saving files
+            elif accept_token('save'):
+                var = expect_type('var', console_index)
+                expect('in', console_index)
+                path = expect_type('path', console_index)
+                return Save_File(var, path)
             #importing other files
             elif accept_token('import'):
                 #load file
@@ -1808,7 +1841,7 @@ def file_parser(tokens, console_index, input_string):
             #increase index to check for equals
             current_index += 1
             #check if changing variable type
-            if accept_token("=") or accept_token('('):
+            if accept_token("=") or accept_token('(') or accept_token('.'):
                 #decrement by 2 to get variable name
                 current_index -= 2
                 var = expect_type('var', console_index)

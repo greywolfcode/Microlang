@@ -1,0 +1,6 @@
+#make variable to save
+make str testString = 'Hello, World! x2'
+#can only save data that can be represented as text
+# new file will be created if it does nto exiist
+save testString in tutorial/file_IO/file.txt
+#file will be automatically closed

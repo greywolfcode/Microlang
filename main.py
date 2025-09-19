@@ -1,5 +1,6 @@
 #TODO:
 #fix all remaining bugs :)
+
 #make error correction code point to the correct spot in the input string
 #single raise error function
 #fill in all missing areas requireing a raise error
@@ -7,7 +8,6 @@
 #add try: except: block
 #line stored in token by lexer is 1 to low (Off By One error?)
 
-#modify items from array
 #retrive/modify variables in classes
 #make classes in classes work
 

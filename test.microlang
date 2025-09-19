@@ -1,4 +1,2 @@
-
-make array a = { 0 , 'hello' }
-make str b = a ( 1 ) ( 1 : 4 )
-display b
+make array a = { 'hi' , 7 , True , { 'in' , 9 } }
+display a
