@@ -856,8 +856,13 @@ def file_interpreter(syntax_tree, console_index, input_string):
             pass
         return value
     def get_class_value(value):
-        #get class instance 
-        instance = search_vars(current_scope, value.instance.token)
+        if value.instance.type == 'get_class_value':
+            value.instance = get_class_value(value.instance)
+        #get class instance if required
+        if not isinstance(value.instance, Class_Instance):
+            instance = search_vars(current_scope, value.instance.token)
+        else:
+            instance = value.instance
         #make sure variable is an instance of a class
         if instance.type == 'class_instance':
             #make sure class has correct variable
@@ -882,6 +887,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #can pull proper values straight from other variable
                 value = copy.deepcopy('var')
         elif value.type == 'get_class_value':
+            #loop for nested classes
             value = get_class_value(value)
         elif value.type == 'run_func':
             #get changer token
@@ -976,6 +982,30 @@ def file_interpreter(syntax_tree, console_index, input_string):
             elif array.token_type == 'array':
                 array.token[int(indexes[0].token)] =  modify_array(array.token[int(indexes[0].token)], indexes[1:], value)
                 return array
+            #check if modifying class
+            elif isisntance(array, Class_Instance):
+                return modify_class_value(arrya, indexes, value)
+            else:
+                #raise error
+                pass
+        else:
+            return value
+    def modify_class_value(var, indexes, value):
+        #check if there are still indexes
+        if len(indexes) != 0:
+            #check if need to modify array instead
+            if indexes[0].token_type == 'flt':
+                if var.type == 'array':
+                    return modify_array(var, indexes, value)
+                else:
+                    pass
+            elif isinstance(var, Class_Instance):
+                if 'self.' + indexes[0].token in set(var.instance_vars.keys()):
+                    var = modify_class_value(var.instance_vars['self.' + indexes[0].token], indexes[1:], value)
+                    return var
+                else:
+                    #raise error
+                    pass
             else:
                 #raise error
                 pass
@@ -988,16 +1018,34 @@ def file_interpreter(syntax_tree, console_index, input_string):
         var = search_vars(current_scope, element.var.token)
         #functions and classes should be handled differently due to not having a "value" attribute
         if var.type not in {'function', 'class', 'instance'}:
-            #check if modifying array
+            #check if modifying array/getting class value
             if element.indexes != None:
-                array = search_vars(current_scope, element.var.token)
-                #type doens't matter, it will be ignored
+                #type doesn't matter, it will be ignored
                 value = get_var_value(Token('flt', 'type'), element.value, ignore_type=True)
-                #convert variable to token if required
-                if isinstance(value, Variable):
-                    value = Token(value.value, value.type)
-                #call function to modify array
-                array.value[int(element.indexes[0].token)] = modify_array(array.value[int(element.indexes[0].token)], element.indexes[1:], value)
+                #check what type of variable to retrieve
+                if element.indexes[0].token_type == 'var':
+                    instance = search_vars(current_scope, element.var.token)
+                    #make sure instance is in fact a clas instance
+                    if isinstance(instance, Class_Instance):
+                        #make sure variable exists in instance
+                        if 'self.' + element.indexes[0].token in set(instance.instance_vars.keys()):
+                            if isinstance(value, Variable):
+                                instance.instance_vars['self.' + element.indexes[0].token].value = modify_class_value(instance.instance_vars['self.'+element.indexes[0].token], element.indexes[1:], value).value
+                            else:
+                                instance.instance_vars['self.' + element.indexes[0].token] = modify_class_value(instance.instance_vars['self.'+element.indexes[0].token], element.indexes[1:], value)
+                        else:
+                            #raise error
+                            pass
+                    else:
+                        #raise error
+                        pass
+                elif element.indexes[0].token_type == 'flt':
+                    #convert variable to token if required; can't store variable object in array
+                    if isinstance(value, Variable):
+                        value = Token(value.value, value.type)
+                    array = search_vars(current_scope, element.var.token)
+                    #call function to modify array
+                    array.value[int(element.indexes[0].token)] = modify_array(array.value[int(element.indexes[0].token)], element.indexes[1:], value)
             #make sure types match
             elif value.type == var.type:
                 #get the new value

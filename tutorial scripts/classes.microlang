@@ -46,6 +46,5 @@ make flt z = classInstanceWithInheritance . addValues [ 9 ]
 
 #retrieve value from class
 make flt w = classInstanceWithInheritance . arg3
-display w
 #change value in class
-#classInstanceWithInheritance . arg3 = 9
+classInstanceWithInheritance . arg3 = 9

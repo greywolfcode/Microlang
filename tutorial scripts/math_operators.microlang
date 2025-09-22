@@ -1,0 +1,12 @@
+#add
+make flt a = 3 + 4
+#subtract
+make flt b = 3 - 4
+#multiply
+make flt c  = 3 * 4
+#divide
+make flt d = 3 / 4
+#exponents
+make flt e = 3 ** 4
+#modulo
+make flt f = 3 % 4

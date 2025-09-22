@@ -1206,25 +1206,33 @@ def file_parser(tokens, console_index, input_string):
                     instance = expect_type('var', console_index)
                     #pass over period
                     expect('.', console_index)
-                    #check if retreiving variable or running function
-                    current_index += 1
                     #if at line end, don't bother checking for function
-                    if check_line_end():
-                        #retrieve variable_name
-                        current_index -= 1
-                        var = expect_type('var', console_index)
-                        value = Get_Class_Value(instance, var)
-                    else:
-                        if accept_token('['):
-                            #decrement current_index (accept_token increases current_index)
-                            current_index -= 2
-                            name, args = create_func(check_type=False)
-                            value = Class_Func(instance, name, args)
-                        else:
-                            #retrieve variable name
+                    while True:
+                        #check if retreiving variable or running function
+                        current_index += 1
+                        if check_line_end():
+                            #retrieve variable_name
                             current_index -= 1
                             var = expect_type('var', console_index)
                             value = Get_Class_Value(instance, var)
+                            break
+                        else:
+                            if accept_token('['):
+                                #decrement current_index (accept_token increases current_index)
+                                current_index -= 2
+                                name, args = create_func(check_type=False)
+                                value = Class_Func(instance, name, args)
+                                break
+                            else:
+                                #retrieve variable name
+                                current_index -= 1
+                                value = expect_type('var', console_index)
+                                value = Get_Class_Value(instance, value)
+                                instance = value
+                                if check_line_end():
+                                    break
+                                else:
+                                    expect('.', console_index)
                     #tell next chain of if statements to not run
                     used = True
                 #for string slicing
@@ -1847,15 +1855,29 @@ def file_parser(tokens, console_index, input_string):
                 var = expect_type('var', console_index)
                 #check for modifying array values
                 indexes = None
-                if accept_token('('):
+                # = does not require getting indexes
+                if not accept_token('='):
+                    #get type to look for
+                    if accept_token('('):
+                        next_type = 'bracket'
+                    elif accept_token('.'):
+                        next_type = 'class_value'
                     indexes = []
                     #loop until no more indexes are found
                     while True:
-                        index = expect_type('flt', console_index)
-                        indexes.append(index)
-                        expect(')', console_index)
+                        if next_type == 'bracket':
+                            index = expect_type('flt', console_index)
+                            indexes.append(index)
+                            expect(')', console_index)
+                        elif next_type == 'class_value':
+                            index = expect_type('var', console_index)
+                            indexes.append(index)
                         #break if new index is not found
-                        if not accept_token('('):
+                        if accept_token('('):
+                            next_type = 'bracket'
+                        elif accept_token('.'):
+                            next_type = 'class_value'
+                        else:
                             break
                 expect('=', console_index)
                 #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked

@@ -1,0 +1,31 @@
+#create outer class
+class outer [ ]
+{
+    #create inner class
+    class inner [ ]
+    {
+        func __init__ [ ] -> void
+        {
+            make flt self.value = 9
+        }
+        func returnValue [ ] -> str
+        {
+            return 'hi'
+        }
+    }
+    func __init__ [ ] -> void
+    {
+        #make instance of inner class
+        make instance self.inner_instance = new inner [ ]
+        
+    }
+}
+
+#make instance of outer class
+make instance outer_instance = new outer [ ]
+
+#get value from outer_class instance of inner_class instance 
+make flt x = outer_instance . inner_instance . value
+
+#run function from nested class
+#make str y = outer_instance . inner_instance . returnvalue [ ]

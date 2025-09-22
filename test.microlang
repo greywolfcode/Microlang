@@ -1,2 +1,0 @@
-make array a = { 'hi' , 7 , True , { 'in' , 9 } }
-display a
