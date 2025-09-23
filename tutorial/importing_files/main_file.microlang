@@ -1,0 +1,17 @@
+#import other file. Do not include the extension
+#note that if it is loaded in a local scope, it will not load into global scope
+#only functions and classes get loaded from file
+import tutorial/importing_files/library
+
+#run classes/functions from the other file as if it were 
+#in a class with the file name
+make flt a = library . add [ 9 , 8 ]
+display a
+
+#make instance of class in library
+make instance b = new library . simpleClass [ '¡Hola!' ]
+#run function
+make str c = b . returnHi [ ]
+
+#get constant from library
+make flt d = library . pi

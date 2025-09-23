@@ -8,7 +8,6 @@
 #add try: except: block
 #line stored in token by lexer is 1 to low (Off By One error?)
 
-#make running functions from nested classe instances work
 #make string concatenation work
 #fix comparison statement creation?
 

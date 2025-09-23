@@ -855,7 +855,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #raise error
             pass
         return value
-    def get_class_value(value):
+    def get_class_value(value, get_class=False):
         if value.instance.type == 'get_class_value':
             value.instance = get_class_value(value.instance)
         #get class instance if required
@@ -874,6 +874,31 @@ def file_interpreter(syntax_tree, console_index, input_string):
         else:
             #raise error
             pass
+    def get_nested_class(outer_classes, current_class):
+        for inner_class in outer_classes:
+            if current_class.type == 'class':
+                if inner_class.token in set(current_class.functions.keys()):
+                    current_class = current_class.functions[inner_class.token]
+                else:
+                    #raise error
+                    pass
+            elif isinstance(current_class, Class_Instance):
+                if inner_class.token in set(current_class.instance_vars.keys()):
+                    #make sure variable stores a class instance
+                    if isinstance(current_class.instance_vars[inner_class.token], Class_Instance):
+                        current_class = current_class.instance_vars[inner_class.token]
+                    else:
+                        #raise error
+                        pass
+                elif inner_class.token in set(current_class.instance_class.functions.keys()):
+                    current_class = current_class.instance_class.functions[inner_class.token]
+                else:
+                    #raise error
+                    pass
+            else:
+                #raise error
+                pass
+        return current_class
     def get_var_value(var_type, value, ignore_type=False):
         #get variable value if setting a variable to another variable
         if var_type.token == 'var':
@@ -916,7 +941,15 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #raise error
                 pass
         elif value.type == 'make_class_instance':
-            instance_class = search_vars(current_scope, value.name.token)
+            #check if there are outer classes
+            if len(value.outer_classes) != 0:
+                current_class = search_vars(current_scope, value.outer_classes[0].token)
+                #starting at first inner class
+                final_class = get_nested_class(value.outer_classes[1:], current_class)
+                #get instance from current_class
+                instance_class = get_nested_class([value.name], final_class)
+            else:
+                instance_class = search_vars(current_scope, value.name.token)
             instance = Class_Instance(instance_class, {})
             #check if there is an init function
             if '__init__' in set(instance_class.functions.keys()):
@@ -1091,8 +1124,13 @@ def file_interpreter(syntax_tree, console_index, input_string):
     def get_input(string):
         return input(string.token)
     def run_class_func(element):
-        #retrive class instance
-        instance = search_vars(current_scope, element.instance.token)
+        #check if using nested class
+        if element.instance.type == 'get_class_value':
+            instance = get_class_value(element.instance, get_class=True)
+            #get actual instance using name
+        else:
+            #retrive class instance
+            instance = search_vars(current_scope, element.instance.token)
         #make sure function exists in class
         if element.name.token in set(instance.instance_class.functions.keys()):
             #add refrence to isntance vars in current_scope

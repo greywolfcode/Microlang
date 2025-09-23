@@ -68,9 +68,10 @@ class Get_Class_Value():
         self.var = var
         self.type = 'get_class_value'
 class Make_Class_Instance():
-    def __init__(self, name, args):
+    def __init__(self, name, args, outer_classes):
         self.name = name
         self.args = args
+        self.outer_classes = outer_classes
         self.type = 'make_class_instance'
 class While_Loop():
     def __init__(self, comparison, statement):
@@ -170,6 +171,10 @@ class String_Slice():
         self.stop = stop
         self.step = step
         self.type = 'string_slice'
+class String_Concat():
+    def __init__(self, strings):
+        self.strings = strings
+        self.type = 'string_concat'
 class Get_Array_Value():
     def __init__(self, var, index):
         self.var = var
@@ -1263,9 +1268,21 @@ def file_parser(tokens, console_index, input_string):
             pass
         #check if instance of class is being made
         elif accept_token('new'):
+            #store outer classes
+            outer_classes = []
+            #check if being made from nested class
+            while True:
+                current_index += 1
+                if accept_token('.'):
+                    current_index -= 2
+                    outer_classes.append(expect_type('var', console_index))
+                    expect('.', console_index)
+                else:
+                    current_index -= 1
+                    break
             #hijacking create_func to get class definition
             name, args = create_func(check_type=False)
-            value = Make_Class_Instance(name, args)
+            value = Make_Class_Instance(name, args, outer_classes)
         #check if a variable function is being run
         elif accept_type('type') or accept_type('keyword'):
             value = create_run_func()
@@ -1303,6 +1320,27 @@ def file_parser(tokens, console_index, input_string):
         elif do_type_check == False:
             value = tokens[line][current_index]
             current_index += 1
+        #string concatenation
+        elif var_type.token == 'str' or  (accept_type('str') and do_type_check == False):
+            #incrase index to check for +
+            current_index += 1
+            if not check_line_end()
+                if accept_token('+'):
+                    strings = []
+                    current_index -= 2
+                    while True:
+                        strings.append(expect_type('str', console_index))
+                        if check_line_end():
+                            break
+                        else:
+                            expect('+', console_index)
+                    value = String_Concat(strings)
+                else:
+                    #raise error
+                    pass
+            else:
+                current_index -= 1
+                value = expect_type('str', console_index)
         else:
             #check for right type if not array or equation
             value = expect_type(var_type.token, console_index)
@@ -1794,11 +1832,11 @@ def file_parser(tokens, console_index, input_string):
                 else:
                     name = Token(file_name, 'var')
                 #file is stored as a class object with path as name (so it cannot be made an instance of)
-                file_class = Class(file_path, [], objects)
+                file_class = Class(file_path, None, objects)
                 #add to syntax tree. This prevents having to return two objects
                 syntax_tree.append(file_class)
                 #Add command to make an instance of the class
-                instance = Make_Class_Instance(file_path, [])
+                instance = Make_Class_Instance(file_path, [], [])
                 make_command = Make_statement(Token('instance', 'type'), name, instance)
                 return make_command
     def change_line_end():

@@ -1,6 +1,0 @@
-#simple addition function
-func add [ flt a , flt b ] -> flt
-{
-    make flt c = a +  b
-    return c
-}

@@ -16,16 +16,19 @@ class outer [ ]
     func __init__ [ ] -> void
     {
         #make instance of inner class
-        make instance self.inner_instance = new inner [ ]
+        make instance self.innerInstance = new inner [ ]
         
     }
 }
 
 #make instance of outer class
-make instance outer_instance = new outer [ ]
+make instance outerInstance = new outer [ ]
 
 #get value from outer_class instance of inner_class instance 
-make flt x = outer_instance . inner_instance . value
+make flt x = outerInstance . innerInstance . value
 
 #run function from nested class
-#make str y = outer_instance . inner_instance . returnvalue [ ]
+make str y = outerInstance . innerInstance . returnValue [ ]
+
+#make instance of nested function
+make instance innerClassInstance = new outerInstance . inner [ ]

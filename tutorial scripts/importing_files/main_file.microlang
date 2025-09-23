@@ -1,8 +1,0 @@
-#import other file. Do not include the extension
-#note that if it is loaded in a local scope, it will not load into global scope
-#only functions and classes get loaded
-import tutorial/importing_files/library
-
-#run classes/functions from the other file as if it were a class
-make flt a = library . add [ 9 , 8 ]
-display a

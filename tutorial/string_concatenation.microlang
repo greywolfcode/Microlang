@@ -1,0 +1,5 @@
+#two strings
+make str a = 'hello' + 'world'
+
+#string and variable
+make str b = a + '!'

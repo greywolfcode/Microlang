@@ -1,0 +1,28 @@
+#init function for library will be run upon importing 
+#it is not required but may be useful for defining constant values
+func __init__ [ ] -> void
+{
+    #define constant like you would for a class
+    make flt self.pi = 3.14159
+}
+
+
+#simple addition function
+func add [ flt a , flt b ] -> flt
+{
+    make flt c = a +  b
+    return c
+}
+
+#simple class
+class simpleClass [ ]
+{
+    func __init__ [ str hi ] -> void
+    {
+        make str self.hi = hi
+    }
+    func returnHi [ ] -> str
+    {
+        return self.hi
+    }
+}
