@@ -1,15 +1,19 @@
 #TODO:
 #fix all remaining bugs :)
+#replace/remove console code?
 
 #make error correction code point to the correct spot in the input string
 #single raise error function
 #fill in all missing areas requireing a raise error
 #raise error in parser if elif/else do not have a parent
-#add try: except: block
+#add try/except/finally block
 #line stored in token by lexer is 1 to low (Off By One error?)
 
-#make string concatenation work
-#fix comparison statement creation?
+#fix comparison statement creation
+#add not to comparisons
+
+#add integer type
+#change for loop, string slicing, and getting values from array to use integer type
 
 #import standerd libraries
 import traceback
@@ -171,6 +175,8 @@ def main():
                 #prints help menu
                 case 'help':
                     print(f'[Out_{index}]:')
+                    print('Note: this syntex is deprecated and is only used for the console')
+                    print()
                     print('Put spaces between all tokens except inside of strings')
                     print()
                     print('Type "display_vars" to see all variables')

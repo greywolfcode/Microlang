@@ -1,5 +1,5 @@
-#two strings
-make str a = 'hello' + 'world'
+#multiple strings
+make str a = 'Hello' + ' ' + 'World'
 
 #string and variable
 make str b = a + '!'

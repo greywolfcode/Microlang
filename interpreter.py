@@ -965,6 +965,25 @@ def file_interpreter(syntax_tree, console_index, input_string):
             del current_scope.class_vars
         elif value.type == 'string_slice':
             value = slice_string(value)
+        elif value.type == 'string_concat':
+            #loop through all strings
+            strings = []
+            for string in value.strings:
+                if string.token_type == 'var':
+                    #make sure var is the right type
+                    var = search_vars(current_scope, string.token)
+                    if var.type == 'str':
+                        strings.append(var.value)
+                    elif var.type == 'flt' or var.type == 'bool':
+                        strings.append(str(var.value))
+                    else:
+                        #raise error
+                        pass
+                #values are already stored as a string in the token
+                elif string.token_type == 'str' or string.token_type == 'flt' or string.token_type == 'bool':
+                    strings.append(string.token)
+            #merge strings
+            value = Variable('str',"".join(strings))
         elif value.type == 'get_array_value':
             #run function to get array value
             result = get_array_value(value.var, value.index)

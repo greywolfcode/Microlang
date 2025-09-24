@@ -1,0 +1,41 @@
+#create factorial function
+func factorial [ flt value ] -> flt
+{
+    #get out clause
+    if value == 1 then 
+    {
+        return value
+    }
+    else
+    {
+        #get value to use for next loop
+        make flt x = value - 1
+        #run factorial function for next lower number
+        make flt y = factorial [ x ]
+        #multiply inputted number with the factorial
+        make flt z = value * y
+        return z
+    }
+}
+
+#get inputted number
+make str num = input 'Give integer here: '
+#convert string to flt
+make flt number = flt [ num ]
+
+#/make upper bound for entered number
+the actual upper bound will depend on the Python version recursion depth
+but 100 factorial is large enough that is seems like plenty/#
+if number > 100 then
+{
+    #combined strings to make arror message
+    make str error = 'Number ' + number + ' is too big (>100)'
+    display error
+}
+else
+{
+    #run factorial function
+    make flt finalFactorial = factorial [ number ]
+    #display factorial
+    display finalFactorial
+}

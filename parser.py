@@ -1324,12 +1324,15 @@ def file_parser(tokens, console_index, input_string):
         elif var_type.token == 'str' or  (accept_type('str') and do_type_check == False):
             #incrase index to check for +
             current_index += 1
-            if not check_line_end()
+            if not check_line_end():
                 if accept_token('+'):
                     strings = []
                     current_index -= 2
                     while True:
-                        strings.append(expect_type('str', console_index))
+                        if accept_type('var'):
+                            strings.append(expect_type('var', console_index))
+                        else:
+                            strings.append(expect_type('str', console_index))
                         if check_line_end():
                             break
                         else:
