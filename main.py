@@ -8,12 +8,11 @@
 #raise error in parser if elif/else do not have a parent
 #add try/except/finally block
 #line stored in token by lexer is 1 to low (Off By One error?)
-
-#fix comparison statement creation
-#add not to comparisons
+#make expect/expect_type/accept_token/accpet_type check if there are still tokens before doing actual check
+#make elements produced by parser store a line to display during interpreter errors
 
 #add integer type
-#change for loop, string slicing, and getting values from array to use integer type
+#change for loop, string slicing, and getting values from arrays to use integer type
 
 #import standerd libraries
 import traceback

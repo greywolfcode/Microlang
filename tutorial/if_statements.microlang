@@ -1,0 +1,37 @@
+make flt x = 10
+#basic if statements
+if ( x == 2 ) then
+{
+    display True
+    display 'hi'
+}
+elif ( x <= 4 ) then
+{
+    display 5
+    display 7
+}
+elif ( x > 5 ) then
+{
+    display 6
+}
+else
+{
+    display False
+}
+
+#/more complex if statement
+each single comparison must be in parenthesis/#
+if ( ( x == 2 ) and ( x > -1 ) ) then
+{
+    display 12
+}
+elif ( ( x > 7 ) or False ) then
+{
+    display 14
+}
+
+#useing not in if statement
+if ( not ( x == 1 ) and not ( x == 2 ) ) then
+{
+    display True
+}

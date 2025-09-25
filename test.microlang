@@ -1,0 +1,4 @@
+make bool b = True
+display b
+b = ( 1 == 2 )
+display b

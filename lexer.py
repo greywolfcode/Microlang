@@ -142,7 +142,8 @@ def file_lexer(input_string, console_index):
                 block_comment = False
             else:
                 return True
-        keywords = {'make', 'if', 'elif', 'else', 'then', 'and', 'or', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'save', 'as', 'import', 'link'}
+        keywords = {'make', 'if', 'elif', 'else', 'then', 'not', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'save', 'as', 'import', 'link'}
+        compare_keywords = {'or', 'and'}
         types = {'flt', 'str', 'array', 'var', 'bool', 'void', 'instance'}
         booleans = {'True', 'False'}
         #variables that need to be called but can't be used as normal names
@@ -187,6 +188,9 @@ def file_lexer(input_string, console_index):
             #check if it is only boolean
             elif current_token in booleans:
                 tokens[-1].append(Token(token, 'bool', index - len(current_token), line))
+            #check if it is a valid comparison
+            elif compare_reg.search(token) or (token in compare_keywords):
+                tokens[-1].append(Token(token, 'comp', index - len(current_token), line))
             #check if it is a valid variable name
             elif var_reg.search(token):
                 tokens[-1].append(Token(token, 'var', index - len(current_token), line))
@@ -199,9 +203,6 @@ def file_lexer(input_string, console_index):
             #check if it is a assignment equals; length check makes = assignment but == a compare
             elif assign_reg.search(token) and len(token) == 1:
                 tokens[-1].append(Token(token, 'assign', index - len(current_token), line))
-            #check if it is a valid comparison
-            elif compare_reg.search(token):
-                tokens[-1].append(Token(token, 'comp', index - len(current_token), line))
             #check if it is a path
             elif path_reg.search(token):
                 tokens[-1].append(Token(token, 'path', index - len(current_token), line))

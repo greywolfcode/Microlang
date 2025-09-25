@@ -1,0 +1,13 @@
+#equals
+make bool a = ( 1 == 2 )
+#not equals
+make bool b = ( 1 != 2 )
+#less than, grater then, etc.
+make bool c = ( 1 < 2 )
+make bool d = ( 1 > 2 )
+make bool e = ( 1 <= 2 )
+make bool f = ( 1 >= 2 )
+#and/or/not
+make bool g = ( True and False )
+make bool h = ( True or False )
+make bool i = ( not True )

@@ -788,6 +788,26 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 else:
                     #raise error
                     pass
+    def find_not(value):
+        '''returns Not the entered value'''
+        #check if it is a comparison first
+        if value.type == 'comp':
+            value = not interpret_comp(value)
+            #tokens should be stored as strings
+            return Token(str(value), 'bool')
+        #note bool(string) does not convert it to a bool, so other method has to be sued
+        if value.token_type == 'var':
+            var = search_vars(current_scope, value.token)
+            if var.type == 'bool':
+                value = not var.value == 'True'
+                return Token(str(value), 'bool')
+            else:
+                return Token(var.value, var.type)
+        elif value.token_type == 'bool':
+            value = not value.token == 'True'
+            return Token(str(value), 'bool')
+        else:
+            return value
     def interpret_comp(comp):
         '''Return boolean value of a Comparison'''
         def get_token(token):
@@ -796,6 +816,8 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 value = f'float("{interpret_equation(token.postfix).token}")'
             elif token.type == 'comp':
                 value = interpret_comp(token)
+            elif token.type == 'not_statement':
+                value = find_not(token.value).token
             elif token.type == 'token':
                 #check for individual values; need to explicitly set to type for eval to work
                 if token.token_type == 'str':
@@ -911,6 +933,15 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 var = search_vars(current_scope, value.token)
                 #can pull proper values straight from other variable
                 value = copy.deepcopy('var')
+        #get comparisons 
+        elif value.type == 'comp':
+            value = Variable('bool', interpret_comp(value))
+        elif value.type == 'not_statement':
+            boolean = find_not(value.value)
+            if boolean.token_type == 'bool':
+                value = Variable('bool', boolean.token)
+            else:
+                value = Variable(boolean.token_type, boolean.token)
         elif value.type == 'get_class_value':
             #loop for nested classes
             value = get_class_value(value)
@@ -1098,11 +1129,15 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     array = search_vars(current_scope, element.var.token)
                     #call function to modify array
                     array.value[int(element.indexes[0].token)] = modify_array(array.value[int(element.indexes[0].token)], element.indexes[1:], value)
-            #make sure types match
-            elif value.type == var.type:
+            else:
                 #get the new value
                 value = get_var_value(Token(var.type, 'type'), element.value)
-                current_scope.variables[element.var.token].value = value.value
+                #make sure types match
+                if value.type == var.type:
+                    current_scope.variables[element.var.token].value = value.value
+                else:
+                    #raise error
+                    pass
         else:
             #raise error 
             pass

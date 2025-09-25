@@ -149,6 +149,10 @@ class Comparison():
         self.comp_op = comp 
         self.right = right
         self.type = 'comp'
+class Not_Statement():
+    def __init__(self, value):
+        self.value = value
+        self.type = 'not_statement'
 class Equation():
     def __init__(self, postfix):
         self.postfix = postfix
@@ -869,22 +873,43 @@ def file_parser(tokens, console_index, input_string):
     def comparison():
         nonlocal current_index
         '''Creates Comparison Objects'''
-        if len(tokens[line]) == current_index:
-            return
-        left = expect_type(['var', 'flt', 'str', 'bool'], console_index)
-        comp = expect_type(['comp'], console_index)
-        right = expect_type(['var', 'flt', 'str', 'bool', 'orderer'], console_index)
-        #makeing sure that right is not a bracketed equation. Left will have been grabbed before this by arrange_comps()
-        if right.token == '(':
-            current_index -= 1
-            #check comparison or equation
-            if braketed_expression() == 'comparison':
+        #get parts of the comparison object
+        if accept_token('('):
+            left = comparison()
+            expect(')', console_index)
+        #check for not 
+        elif accept_token('not'):
+            if accept_token('('):
+                value = comparison()
+                expect(')', console_index)
+                left = Not_Statement(value)
+            else:
+                value = tokens[line][current_index]
+                left = Not_Statement(value)
                 current_index += 1
-                right = bracket_comps()
-            elif braketed_expression() == 'equation':
-                right = equation()
+            #check if only using not
+            if accept_token(')'):
+                current_index -= 1
+                return left
+        else:
+            left = expect_type(['var', 'flt', 'str', 'bool'], console_index)
+        comp = expect_type(['comp'], console_index)
+        if accept_token('('):
+            right = comparison()
+            expect(')', console_index)
+        elif accept_token('not'):
+            if accept_token('('):
+                value = comparison()
+                expect(')', console_index)
+                right = Not_Statement(value)
+            else:
+                value = tokens[line][current_index]
+                right = Not_Statement(value)
+                current_index += 1
+        else:
+            right = expect_type(['var', 'flt', 'str', 'bool'], console_index)
         #make sure valid comparison operator is used
-        if comp.token != '==' and comp.token != '!=':
+        if not comp.token in {'==', '!=', 'and', 'or'}:
             #check if they are both floats or variables
             if (not left.token_type in {'var', 'flt'}) or (not right.token_type in {'var', 'flt'}):
                 #raise error if wrong comparison is used for a number
@@ -894,229 +919,6 @@ def file_parser(tokens, console_index, input_string):
                 print(' ' * out_length + ' ' * (comp.location - len(comp.token)) + '^' * len(comp.token_type))
                 raise Parser_Error('')
         return Comparison(left, comp, right)
-    def bracket_comps():
-        '''Create Comparison Object For Bracketed Comparisons'''
-        nonlocal current_index
-        comps = []
-        while not accept_token(')'):
-            if len(tokens) == current_index:
-                print('error')
-                break
-            #check for bracket
-            if accept_token('('):
-                current_index -= 1
-                #check comparison or equation
-                if braketed_expression() == 'comparison':
-                    current_index += 2
-                    comps.append(bracket_comps())
-                elif braketed_expression() == 'equation':
-                    comps.append(equation())
-            else:
-                comps.append(comparison())
-            #combined comparison if 'and' or 'or' is found
-            if accept_token('and'):
-                #create new token for or
-                comp = Token('and', 'keyword')
-                #check for bracket
-                if accept_token('('):
-                    #check comparison or equation
-                    if braketed_expression() == 'comparison':
-                        current_index += 1
-                        comps.append(bracket_comps())
-                    elif braketed_expression() == 'equation':
-                        comps.append(equation())
-                else:
-                    comps.append(comparison())
-                #combined curent comparisons
-                complex_comp = Comparison(comps[0], comp, comps[1])
-                comps = [complex_comp]
-            elif accept_token('or'):
-                #create new token for or
-                comp = Token('or', 'keyword')
-                #check for bracket
-                if accept_token('('):
-                    #check comparison or equation
-                    if braketed_expression() == 'comparison':
-                        current_index += 1
-                        comps.append(bracket_comps())
-                    elif braketed_expression() == 'equation':
-                        comps.append(equation())
-                else:
-                    comps.append(comparison())
-                #combined curent comparisons
-                complex_comp = Comparison(comps[0], comp, comps[1])
-                comps = [complex_comp]
-            elif accept_type('comp'):
-                    #get token for the compairson
-                    comp = tokens[current_index -1]
-                    #check for bracket
-                    if accept_token('('):
-                        current_index -= 1
-                        #check comparison or equation
-                        if braketed_expression() == 'comparison':
-                            #current_index += 1
-                            comps.append(bracket_comps())
-                        elif braketed_expression() == 'equation':
-                            comps.append(equation())
-                    else:
-                        #check if there is only 1 charachter after (i.e (3 + 1) == 4)
-                        if tokens[current_index + 1].token == 'then' or tokens[current_index + 1].token == ')':
-                            comps.append(tokens[current_index])
-                            current_index += 1
-                        elif braketed_expression() == 'comparison':
-                            comps.append(comparison())
-                        else:
-                            comps.append(tokens[current_index])
-                            current_index += 1
-            elif accept_token(')'):
-                break
-            else:
-                print('error')
-        #return the single comparison object
-        return comps[0]
-    def arrange_comps():
-        '''Makes full comparison objects'''
-        nonlocal current_index
-        comps = []
-        #loop until comparison statement is finished
-        while True:
-            if accept_token('('):
-                #loop until no tokens or closing bracket is found
-                #check comparison or equation
-                current_index -= 1
-                if braketed_expression() == 'comparison':
-                    current_index += 1
-                    comps.append(bracket_comps())
-                elif braketed_expression() == 'equation':
-                    comps.append(equation())
-                #combined comparison if 'and' or 'or' or comparison is found
-                if accept_type('comp'):
-                    #get token for the compairson
-                    comp = tokens[current_index - 1]
-                    #check for bracket
-                    if accept_token('('):
-                        current_index -= 1 
-                        #check comparison or equation
-                        if braketed_expression() == 'comparison':
-                            current_index += 1
-                            comps.append(bracket_comps())
-                        elif braketed_expression() == 'equation':
-                            comps.append(equation())
-                    else:
-                        #check if there is only 1 charachter after (i.e (3 + 1) == 4)
-                        if tokens[current_index + 1].token == 'then':
-                            comps.append(tokens[current_index])
-                            current_index += 1
-                        elif braketed_expression() == 'comparison':
-                            comps.append(comparison())
-                        else:
-                            comps.append(tokens[current_index])
-                            current_index += 1
-                    #create complex comparison
-                    complex_comp = Comparison(comps[0], comp, comps[1])
-                    comps = [complex_comp]
-                elif accept_token('and'):
-                    #create new token for and
-                    comp = Token('and', 'keyword')
-                    #check for bracket
-                    if accept_token('('):
-                        current_index -= 1
-                        #check comparison or equation
-                        if braketed_expression() == 'comparison':
-                            #current_index += 1
-                            comps.append(bracket_comps())
-                        elif braketed_expression() == 'equation':
-                            comps.append(equation())
-                    else:
-                        comps.append(comparison())
-                    complex_comp = Comparison(comps[0], comp, comps[1])
-                    comps = [complex_comp]
-                elif accept_token('or'):
-                    #create new token for or
-                    comp = Token('or', 'keyword')
-                    #check for bracket
-                    if accept_token('('):
-                        current_index -= 1
-                        #check comparison or equation
-                        if braketed_expression() == 'comparison':
-                           # current_index += 2
-                            comps.append(bracket_comps())
-                        elif braketed_expression() == 'equation':
-                            comps.append(equation())
-                    else:
-                        comps.append(comparison())
-                    complex_comp = Comparison(comps[0], comp, comps[1])
-                    comps = [complex_comp]
-                elif accept_token('then') or accept_token('do'):
-                    current_index -= 1
-                    break
-                elif accept_token(')'):
-                    pass
-                else:
-                    break
-            #if no bracket check for type
-            else:
-                #break loop if then is found
-                if accept_token('then') or accept_token('do'):
-                    current_index -= 1
-                    break
-                #combined comparison if 'and' or 'or' or comparison operator is found
-                if accept_type('comp'):
-                    #get token for the compairson
-                    comp = tokens[current_index -1]
-                    #check for bracket
-                    if accept_token('('):
-                        #check comparison or equation
-                        if braketed_expression() == 'comparison':
-                            current_index += 1
-                            comps.append(bracket_comps())
-                        elif braketed_expression() == 'equation':
-                            comps.append(equation())
-                    else:
-                        if braketed_expression() == 'comparison':
-                            comps.append(comparison())
-                        else:
-                            comps.append(tokens[current_index - 1])
-                    #create complex comparison
-                    complex_comp = Comparison(comps[0], comp, comps[1])
-                    comps = [complex_comp]
-                else:
-                    comps.append(comparison())
-                #check if comparison is 'and'ed or 'or'ed
-                if accept_token('and'):
-                    #create new token for and
-                    comp = Token('and', 'keyword')
-                    #check for bracket
-                    if accept_token('('):
-                        current_index -= 1
-                        #check comparison or equation
-                        if braketed_expression() == 'comparison':
-                            #current_index += 1
-                            comps.append(bracket_comps())
-                        elif braketed_expression() == 'equation':
-                            comps.append(equation())
-                    else:
-                        comps.append(comparison())
-                    complex_comp = Comparison(comps[0], comp, comps[1])
-                    comps = [complex_comp]
-                elif accept_token('or'):
-                    #create new token for or
-                    comp = Token('or', 'keyword')
-                    #check for bracket
-                    if accept_token('('):
-                        #check comparison or equation
-                        if braketed_expression() == 'comparison':
-                            current_index += 1
-                            comps.append(bracket_comps())
-                        elif braketed_expression() == 'equation':
-                            comps.append(equation())
-                    else:
-                        comps.append(comparison())
-                    complex_comp = Comparison(comps[0], comp, comps[1])
-                    comps = [complex_comp]
-                else:
-                    break
-        return comps[0]
     def create_display():
         '''Creates Display Objects'''
         nonlocal current_index
@@ -1316,10 +1118,16 @@ def file_parser(tokens, console_index, input_string):
                         value = expect_type(var_type.token, console_index)
                     else:
                         value = tokens[line][current_index]
-        #get remaining value
-        elif do_type_check == False:
-            value = tokens[line][current_index]
-            current_index += 1
+        #check for comparison objects
+        elif var_type.token == 'bool':
+            if accept_token('('):
+                value = comparison()
+                expect(')', console_index)
+            else:
+                value = expect_type('bool', console_index)
+        #allow for changing variable value using comaprison value
+        elif accept_token('(') and do_type_check == False:
+            value = comparison()
         #string concatenation
         elif var_type.token == 'str' or  (accept_type('str') and do_type_check == False):
             #incrase index to check for +
@@ -1344,6 +1152,10 @@ def file_parser(tokens, console_index, input_string):
             else:
                 current_index -= 1
                 value = expect_type('str', console_index)
+        #get remaining value
+        elif do_type_check == False:
+            value = tokens[line][current_index]
+            current_index += 1
         else:
             #check for right type if not array or equation
             value = expect_type(var_type.token, console_index)
@@ -1583,7 +1395,9 @@ def file_parser(tokens, console_index, input_string):
         nonlocal current_index, line
         #create if statement
         if accept_token('if'):
-            comp = arrange_comps()
+            expect('(', console_index)
+            comp = comparison()
+            expect(')', console_index)
             #check if then is the next token
             expect('then', console_index)
             #move to next line if at end of current line
@@ -1609,7 +1423,9 @@ def file_parser(tokens, console_index, input_string):
                     parent = if_cache[-1]
                 #remove previous and add current to if cache
                 if_cache.pop()
-                comp = arrange_comps()
+                expect('(', console_index)
+                comp = comparison()
+                expect(')', console_index)
                 #check if then is the next token
                 expect('then', console_index)
                 #move to next line if at end of current line
@@ -1745,7 +1561,9 @@ def file_parser(tokens, console_index, input_string):
             #create while loop
             elif accept_token('while'):
                 #get comparison and setup tokens
-                comp = arrange_comps()
+                expect('(', console_index)
+                comp = comparison()
+                expect(')', console_index)
                 expect('do', console_index)
                 change_line_end()
                 expect('{', console_index)
@@ -1920,10 +1738,10 @@ def file_parser(tokens, console_index, input_string):
                             next_type = 'class_value'
                         else:
                             break
-                expect('=', console_index)
-                #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked
-                value = get_var_value(var, do_type_check=False)
-                element = Change_Var_Value(var, value, indexes)
+                else:
+                    #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked
+                    value = get_var_value(var, do_type_check=False)
+                    element = Change_Var_Value(var, value, indexes)
             else:
                 current_index -= 1
                 name, args= create_func(check_type=False)

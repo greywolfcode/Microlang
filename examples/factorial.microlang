@@ -2,7 +2,7 @@
 func factorial [ flt value ] -> flt
 {
     #get out clause
-    if value == 1 then 
+    if ( value == 1 ) then 
     {
         return value
     }
@@ -26,7 +26,7 @@ make flt number = flt [ num ]
 #/make upper bound for entered number
 the actual upper bound will depend on the Python version recursion depth
 but 100 factorial is large enough that is seems like plenty/#
-if number > 100 then
+if ( number > 100 ) then
 {
     #combined strings to make arror message
     make str error = 'Number ' + number + ' is too big (>100)'

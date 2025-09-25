@@ -5,10 +5,10 @@ display x
 #start count at zero 
 make flt count = 0
 #main while loop
-while x > 1 do
+while ( x > 1 ) do
 {
     make flt d_by_two = x % 2
-    if d_by_two == 0 then
+    if ( d_by_two == 0 ) then
     {
         make flt x = x / 2
     }
