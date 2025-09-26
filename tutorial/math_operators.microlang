@@ -1,12 +1,22 @@
 #add
-make flt a = 3 + 4
+make int a = 3 + 4
 #subtract
-make flt b = 3 - 4
+make int b = 3 - 4
 #multiply
-make flt c  = 3 * 4
+make int c  = 3 * 4
 #divide
-make flt d = 3 / 4
+make int d = 3 / 4
 #exponents
-make flt e = 3 ** 4
-#modulo
-make flt f = 3 % 4
+make int e = 3 ** 4
+#modulo/remainder
+make int f = 3 % 4
+
+#/value will be converted to float if the equation includes a float
+but value will be converted to correct type for variable after calculations/#
+
+#this will be a float
+make flt g = 3.0 + 4
+#this will also be a float
+make flt h = 3 + 4
+#this will be an int, although floats will be used for calculations
+make int i = 3.0 + 4

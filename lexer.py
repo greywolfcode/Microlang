@@ -144,7 +144,7 @@ def file_lexer(input_string, console_index):
                 return True
         keywords = {'make', 'if', 'elif', 'else', 'then', 'not', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'save', 'as', 'import', 'link'}
         compare_keywords = {'or', 'and'}
-        types = {'flt', 'str', 'array', 'var', 'bool', 'void', 'instance'}
+        types = {'flt', 'int', 'str', 'array', 'var', 'bool', 'void', 'instance'}
         booleans = {'True', 'False'}
         #variables that need to be called but can't be used as normal names
         special_vars = {'parent.__init__'}
@@ -153,7 +153,7 @@ def file_lexer(input_string, console_index):
             tokens[-1].append(Token(token, 'str', index - len(current_token), line))
         else:
             #define matching patterns
-            float_reg = re.compile(r'^[0-9.-]+$')
+            num_reg = re.compile(r'^[0-9.-]+$')
             var_reg = re.compile(r'^[_a-zA-Z0-9]+$')
             path_reg = re.compile(r'^[_a-zA-Z0-9/.\\\\]+$')
             op_reg = re.compile(r'^[+\-*/]+$|^[\**]+$|^[%]+$')
@@ -183,8 +183,11 @@ def file_lexer(input_string, console_index):
             elif op_reg.search(token):
                 tokens[-1].append(Token(token, 'op', index - len(current_token), line))
             #check if it is only numeric
-            elif float_reg.search(token):
-                tokens[-1].append(Token(token, 'flt', index - len(current_token), line))
+            elif num_reg.search(token):
+                if '.' in token:
+                    tokens[-1].append(Token(token, 'flt', index - len(current_token), line))
+                else:
+                    tokens[-1].append(Token(token, 'int', index - len(current_token), line))
             #check if it is only boolean
             elif current_token in booleans:
                 tokens[-1].append(Token(token, 'bool', index - len(current_token), line))

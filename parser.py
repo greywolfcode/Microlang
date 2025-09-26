@@ -297,6 +297,12 @@ def parser(tokens, console_index, input_string):
                 value = equation()
             else:
                 value = expect_type('flt', console_index)
+        elif accept_type('int'):
+            current_index -= 1
+            if bracketed_expression() == 'equation':
+                value = equation()
+            else:
+                value = expect_type('int', console_index)
         elif accept_token('('):
             current_index -= 1
             if braketed_expression == 'equation':
@@ -383,7 +389,7 @@ def parser(tokens, console_index, input_string):
         #look for input 
         if accept_type('var'):
             value = tokens[current_index - 1]
-        elif accept_type('flt'):
+        elif accept_type('flt') or accept_type('int'):
             value = tokens[current_index - 1]
         elif accept_type('str'):
             value = tokens[current_index - 1]
@@ -400,8 +406,8 @@ def parser(tokens, console_index, input_string):
         #check for seperator comma
         expect(',', console_index)
         #get what output should be
-        #check for flt for string splicing/getting value from array
-        if accept_type('flt'):
+        #check for flt for string slicing/getting value from array
+        if accept_type('flt') or accept_type('int'):
             output = tokens[current_index - 1]
         elif accept_type('keyword'):
             current_index -= 1
@@ -801,7 +807,7 @@ def file_parser(tokens, console_index, input_string):
         #first check if there is just a float next 
         if len(tokens[line]) <= current_index + 2:
             return 'float'
-        elif (tokens[line][current_index + 1].token_type == 'flt' or tokens[line][current_index + 1].token_type == 'var') and tokens[line][current_index + 2].token_type == 'op':
+        elif (tokens[line][current_index + 1].token_type == 'flt' or tokens[line][current_index + 1].token_type == 'var' or tokens[line][current_index + 1].token_type == 'int') and tokens[line][current_index + 2].token_type == 'op':
             return 'equation'
         else:
             return 'comparison'
@@ -826,11 +832,11 @@ def file_parser(tokens, console_index, input_string):
                 break
             else:
                 current_token = tokens[line][current_index]
-                if accept_type('flt'):
-                    #add token (previous due to accept type increseing counter) to output
+                if accept_type('flt') or accept_type('int'):
+                    #add token to output
                     output.append(current_token)
                 elif accept_type('var'):
-                    #add token (previous due to accept type increseing counter) to output
+                    #add token to output
                     output.append(current_token)
                 elif accept_type('op'):
                     while True:
@@ -892,7 +898,7 @@ def file_parser(tokens, console_index, input_string):
                 current_index -= 1
                 return left
         else:
-            left = expect_type(['var', 'flt', 'str', 'bool'], console_index)
+            left = expect_type(['var', 'flt', 'int', 'str', 'bool'], console_index)
         comp = expect_type(['comp'], console_index)
         if accept_token('('):
             right = comparison()
@@ -907,7 +913,7 @@ def file_parser(tokens, console_index, input_string):
                 right = Not_Statement(value)
                 current_index += 1
         else:
-            right = expect_type(['var', 'flt', 'str', 'bool'], console_index)
+            right = expect_type(['var', 'flt', 'int', 'str', 'bool'], console_index)
         #make sure valid comparison operator is used
         if not comp.token in {'==', '!=', 'and', 'or'}:
             #check if they are both floats or variables
@@ -925,13 +931,13 @@ def file_parser(tokens, console_index, input_string):
         nonlocal line
         if accept_type('var'):
             value = tokens[line][current_index]
-        elif accept_type('flt'):
+        elif accept_type('flt') or accept_type('int'):
             #current_index -= 1
             if braketed_expression() == 'equation':
                 current_index += 1
                 value = equation()
             else:
-                value = expect_type('flt', console_index)
+                value = expect_type(['flt', 'int'], console_index)
         elif accept_token('('):
             current_index -= 1
             if braketed_expression == 'equation':
@@ -964,19 +970,19 @@ def file_parser(tokens, console_index, input_string):
     def string_array_retrieving(var):
         '''Create get array value/string slicing objects'''
         #uses same slicing syntax as python
-        start = expect_type('flt', console_index)
+        start = expect_type('int', console_index)
         #check for string slicing (:) or array value ( ) )
         if accept_token(')'):
             value = Get_Array_Value(var, start)
         else:
             expect(':', console_index)
-            stop = expect_type('flt', console_index)
+            stop = expect_type('int', console_index)
             #check for step or end
             if accept_token(')'):
-                step = Token(1, 'flt')
+                step = Token(1, 'int')
             else:
                 expect(':', console_index)
-                step = expect_type('flt', console_index)
+                step = expect_type('int', console_index)
                 expect(')', console_index)
             value = String_Slice(var, start, stop, step)
         return value
@@ -1096,7 +1102,7 @@ def file_parser(tokens, console_index, input_string):
         elif accept_token('{') and do_type_check == False:
             value = create_array()
         #allows equations to be used as input
-        elif var_type.token == 'flt' or (accept_type('flt') and  do_type_check == False):
+        elif (var_type.token == 'flt' or var_type.token == 'int') or ((accept_type('flt') or accept_type('int')) and  do_type_check == False):
             if accept_token('('):
                 current_index -= 1
                 if braketed_expression() == 'equation':
@@ -1167,7 +1173,7 @@ def file_parser(tokens, console_index, input_string):
         while True:
             if accept_type('var'):
                 array.append(tokens[line][current_index])
-            elif accept_type('flt'):
+            elif accept_type('flt') or accept_type('int'):
                 array.append(tokens[line][current_index])
             elif accept_type('str'):
                 array.append(tokens[line][current_index])
@@ -1222,6 +1228,8 @@ def file_parser(tokens, console_index, input_string):
             value = create_array()
         elif accept_type('flt'):
             value = expect_type('flt', console_index)
+        elif accept_type('int'):
+            value = expect_type('flt', console_index)
         elif accept_type('bool'):
             value = expect_type('bool', console_index)
         else:
@@ -1247,12 +1255,12 @@ def file_parser(tokens, console_index, input_string):
         else:
             expect('=', console_index)
         #flt - must use start/stop/step
-        if accept_type('flt'):
+        if accept_type('int'):
             for_type = 'num'
             #start/stop/step need to be set to int to be used in loop
-            start = int(expect_type('flt', console_index).token)
+            start = int(expect_type('int', console_index).token)
             expect(',', console_index)
-            stop = int(expect_type('flt', console_index).token)
+            stop = int(expect_type('int', console_index).token)
             #step will defult to 1 if not provided
             if accept_token('do'):
                 #accept token increases index by 1, have to decrease it
@@ -1260,7 +1268,7 @@ def file_parser(tokens, console_index, input_string):
                 step = 1
             else:
                 expect(',', console_index)
-                step = int(expect_type('flt', console_index).token)
+                step = int(expect_type('int', console_index).token)
             values = [start, stop, step]
         #var and array for iterating through arrays
         elif accept_type('var'):

@@ -680,17 +680,17 @@ def file_interpreter(syntax_tree, console_index, input_string):
         '''Interpret and Calulate Postfix Expressions'''
         output_stack = []
         for token in postfix:
-            if token.token_type == 'flt':
+            if token.token_type == 'flt' or token.token_type == 'int':
                 output_stack.append(token)
             elif token.token_type == 'var':
                 #check if variable exists
                 var = search_vars(current_scope, token.token)
-                #check to make sure the variable is a float
-                if var.type == 'flt':
+                #check to make sure the variable is a float or int
+                if var.type == 'flt' or var.type == 'int':
                     #add tokenized variable to output stack
                     output_stack.append(Token(var.value, var.type))
                 else:
-                    print(f'[Out_{console_index}]: Type Error: {token.token} is not a float')
+                    print(f'[Out_{console_index}]: Type Error: {token.token} is not a float or int')
                     out_length = len(f'[Out_{console_index}]: ')
                     print(' ' * out_length + input_string)
                     print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
@@ -706,8 +706,8 @@ def file_interpreter(syntax_tree, console_index, input_string):
         #changing types
         if element.output.token_type == 'type':
             if element.output.token == 'flt':
-                #can only convert strings to floats
-                if element.value.token_type == 'str':
+                #can only convert strings and ints to floats
+                if element.value.token_type == 'str' or element.value.token_type == 'flt' or element.value.token_type == 'int':
                     try:
                         value = float(element.value.token)
                         return Token(value, 'flt')
@@ -715,7 +715,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                         #raise error
                         pass
                 elif element.value.token_type == 'var':
-                    #chack if variable exists
+                    #check if variable exists
                     var = search_vars(current_scope, element.value.token)
                     try:
                         value = float(var.value)
@@ -723,6 +723,30 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     except:
                         #raise error
                         pass
+                else:
+                    #raise error 
+                    pass
+            elif element.output.token == 'int':
+                #can only convert strings and floats to ints
+                if element.value.token_type == 'str' or element.value.token_type == 'flt' or element.value.token_type == 'int':
+                    try:
+                        value = int(element.value.token)
+                        return Token(value, 'int')
+                    except:
+                        #raise error
+                        pass
+                elif element.value.token_type == 'var':
+                    #check if variable exists
+                    var = search_vars(current_scope, element.value.token)
+                    try:
+                        value = int(var.value)
+                        return Token(value, 'int')
+                    except:
+                        #raise error
+                        pass
+                else:
+                    #raise error 
+                    pass
             elif element.output.token == 'str':
                 if element.value.token_type == 'var':
                     var = search_vars(current_scope, element.value.token)
@@ -1022,7 +1046,11 @@ def file_interpreter(syntax_tree, console_index, input_string):
         elif value.type == 'equation':
             #no longer need the token stuff in token class
             num = interpret_equation(value.postfix)
-            value = Variable(var_type.token, num.token)
+            #make type correct for the variable
+            if var_type.token == 'flt':
+                value = Variable(var_type.token, float(num.token))
+            elif var_type.token == 'int':
+                value = Variable(var_type.token, int(num.token))
         #edit arrays so that varibles are converted to their own values 
         elif var_type.token == 'array':
             #convert values inside arrays

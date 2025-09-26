@@ -11,9 +11,6 @@
 #make expect/expect_type/accept_token/accpet_type check if there are still tokens before doing actual check
 #make elements produced by parser store a line to display during interpreter errors
 
-#add integer type
-#change for loop, string slicing, and getting values from arrays to use integer type
-
 #import standerd libraries
 import traceback
 #import files

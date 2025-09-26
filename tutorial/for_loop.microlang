@@ -14,7 +14,7 @@ for x = 0 , 10 , 2 do
 for x = 0 , 20 do
 {
     display x
-    if x == 10 then
+    if ( x == 10 ) then
     {
         break
     }

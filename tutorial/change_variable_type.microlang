@@ -1,8 +1,10 @@
 #set variable
 make str x = '45'
-#change to string
-make flt y = flt [ x ]
 #change to flt
+make flt y = flt [ x ]
+#change to string
 make str z = str [ y ]
+#change to int
+make int w = int [ y ]
 #change to array
 make array q = array [ z ]
