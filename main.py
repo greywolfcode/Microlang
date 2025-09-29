@@ -3,7 +3,7 @@
 #replace/remove console code?
 
 #make error correction code point to the correct spot in the input string
-#single raise error function
+#single raise error function for parser and interpreter
 #fill in all missing areas requireing a raise error
 #raise error in parser if elif/else do not have a parent
 #add try/except/finally block
@@ -42,16 +42,18 @@ def main():
         #increase index and put out
         print(f'[Out_{index}]:')
         #run program if it loads succesfully
+        #split input into lines
+        file = file.splitlines()
         #tokenize input string 
         try:
-            tokens = lexer.file_lexer(file, index)
+            tokens = lexer.file_lexer(file, index, path)
         #handle errors
         except lexer.Lexer_Error:
             index += 1
             return
         #parse input command
         try:
-            syntax_tree = parser.file_parser(tokens, index, file)
+            syntax_tree = parser.file_parser(tokens, index, file, path)
         #handle errors
         except parser.Parser_Error:
             index += 1

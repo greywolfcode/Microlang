@@ -16,6 +16,15 @@ class Token():
         self.type = 'token'
     def print_vars(self):
         print(self.token, self.token_type, self.location)
+#function to raise error 
+def raise_error(message, line, token, index, input_string, path):
+    #print error message
+    print('File "' + path + '", Line ' + str(line + 1) + ':')
+    print(message)
+    print(input_string[line])
+    print('~' * (index - len(token)) + '^' * len(token))
+    #raise error
+    raise Lexer_Error(message)
 #function to split input into tokens
 def lexer(input_string, console_index):
     current_token = ''
@@ -125,7 +134,7 @@ def lexer(input_string, console_index):
     return tokens
 
 #function to split input into tokens
-def file_lexer(input_string, console_index):
+def file_lexer(input_string, console_index, path):
     comment = False
     block_comment = False
     current_token = ''
@@ -225,22 +234,14 @@ def file_lexer(input_string, console_index):
             else:
                 #check if there is a missing quote mark
                 if found_quotes % 2 != 0:
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(f'[Out_{console_index}]: Syntax Error: Expected \'')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (index - len(current_token)) + '^')
-                    raise Lexer_Error('Missing Quote')
+                    raise_error('Syntax Error: Expected \'', line, current_token, index, input_string, path)
                 else:
-                    print(current_token)
-                    out_length = len(f'[Out_{index}]: ')
-                    print(f'[Out_{console_index}]: Syntax Error: Invalid Syntax. Missing Space?')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (index - len(current_token)) + '^' * len(token))
-                    raise Lexer_Error('')
+                    raise_error('Syntax Error: Invalid Token. Missing Space?', line, '\'', index + 2, input_string, path)
             #index - len(current_token)
             return False
     #split file into rows
-    rows = input_string.splitlines()
+    #rows = input_string.splitlines()
+    rows = input_string
     #loop through all rows
     for line, row in enumerate(rows):
         #add new row to tokens
@@ -251,11 +252,7 @@ def file_lexer(input_string, console_index):
                 #check if any quotes have been found, respond accordingly
                 found_quotes += 1 
                 if found_quotes == 3:
-                    out_length = len(f'[Out_{console_index}]: ')
-                    print(f'[Out_{console_index}]: Syntax Error: Expected \'')
-                    print(' ' * out_length + input_string)
-                    print(' ' * out_length + ' ' * (index - len(current_token)) + '^')
-                    raise Lexer_Error('Extra_Quote_Mark')
+                    raise_error('Syntax Error: Expected \'', line, '\'', index + 2, input_string, path)
             #check if it is a comment
             #elif char == '#':
                 

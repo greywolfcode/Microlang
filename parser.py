@@ -184,6 +184,15 @@ class Get_Array_Value():
         self.var = var
         self.index = index
         self.type = 'get_array_value'
+#function to raise error
+def raise_error(message, input_string, token, file):
+    #print error message
+    print('File "' + file + '", Line ' + str(token.line + 1) + ':')
+    print(message)
+    print(input_string[token.line])
+    print('~' * (token.location) + '^' * len(token.token))
+    #raise error
+    raise Parser_Error(message)
 #main parser function
 def parser(tokens, console_index, input_string):
     #line will be contained in a list
@@ -801,7 +810,7 @@ def parser(tokens, console_index, input_string):
     #return final syntax tree
     return syntax_tree
 #main parser function for files
-def file_parser(tokens, console_index, input_string):
+def file_parser(tokens, console_index, input_string, path):
     def braketed_expression():
         '''Checks what type of brackated expression it is'''
         #first check if there is just a float next 
@@ -917,7 +926,7 @@ def file_parser(tokens, console_index, input_string):
         #make sure valid comparison operator is used
         if not comp.token in {'==', '!=', 'and', 'or'}:
             #check if they are both floats or variables
-            if (not left.token_type in {'var', 'flt'}) or (not right.token_type in {'var', 'flt'}):
+            if (not left.token_type in {'var', 'flt', 'int'}) or (not right.token_type in {'var', 'flt', 'int'}):
                 #raise error if wrong comparison is used for a number
                 print(f'[Out_{console_index}]: Type Error: {comp.token} is not supported for non number instances')
                 out_length = len(f'[Out_{console_index}]: ')
@@ -1379,7 +1388,7 @@ def file_parser(tokens, console_index, input_string):
             print(' ' * out_length + ' ' * (error_token.location - len(error_token.token)) + '^' * len(error_token.token))
             raise Parser_Error('')
     #error if next token is not the same type as input
-    def expect_type(token_types, console_index, error_type='Type'):
+    def expect_type(token_types, console_index):
         '''Raises error if expected type isn't next token'''
         nonlocal current_index
         #check if types are equal, else raise error
@@ -1388,14 +1397,7 @@ def file_parser(tokens, console_index, input_string):
             return tokens[line][current_index - 1]
         else:
             error_token = tokens[line][current_index]
-            out_length = len(f'[Out_{console_index}]: ')
-            #allows for diffferent errors to occur
-            match error_type:
-                case 'Type':
-                    print(f'[Out_{console_index}]: Type Error: {tokens[line][current_index].token} is not a {token_types}')
-            print(' ' * out_length + input_string)
-            print(' ' * out_length + ' ' * (error_token.location - len(error_token.token)) + '^' * len(error_token.token))
-            raise Parser_Error('')
+            raise_error(f'Type Error: {error_token.token} is not a {token_types}', input_string, error_token, path)
     #function to create statements
     def statement():
         nonlocal if_cache

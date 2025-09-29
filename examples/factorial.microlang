@@ -21,7 +21,7 @@ func factorial [ flt value ] -> flt
 #get inputted number
 make str num = input 'Give integer here: '
 #convert string to flt
-make flt number = flt [ num ]
+make int number = int [ num ]
 
 #/make upper bound for entered number
 the actual upper bound will depend on the Python version recursion depth
