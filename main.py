@@ -2,13 +2,9 @@
 #fix all remaining bugs :)
 #replace/remove console code?
 
-#make error correction code point to the correct spot in the input string
-#single raise error function for parser and interpreter
+#single raise error function for interpreter
 #fill in all missing areas requireing a raise error
-#raise error in parser if elif/else do not have a parent
 #add try/except/finally block
-#line stored in token by lexer is 1 to low (Off By One error?)
-#make expect/expect_type/accept_token/accpet_type check if there are still tokens before doing actual check
 #make elements produced by parser store a line to display during interpreter errors
 
 #import standerd libraries

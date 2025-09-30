@@ -928,11 +928,7 @@ def file_parser(tokens, console_index, input_string, path):
             #check if they are both floats or variables
             if (not left.token_type in {'var', 'flt', 'int'}) or (not right.token_type in {'var', 'flt', 'int'}):
                 #raise error if wrong comparison is used for a number
-                print(f'[Out_{console_index}]: Type Error: {comp.token} is not supported for non number instances')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (comp.location - len(comp.token)) + '^' * len(comp.token_type))
-                raise Parser_Error('')
+                raise_error(f'Type Error: {comp.token} is not supported for non-number objects', input_string, comp, path)
         return Comparison(left, comp, right)
     def create_display():
         '''Creates Display Objects'''
@@ -1148,22 +1144,19 @@ def file_parser(tokens, console_index, input_string, path):
             #incrase index to check for +
             current_index += 1
             if not check_line_end():
-                if accept_token('+'):
-                    strings = []
-                    current_index -= 2
-                    while True:
-                        if accept_type('var'):
-                            strings.append(expect_type('var', console_index))
-                        else:
-                            strings.append(expect_type('str', console_index))
-                        if check_line_end():
-                            break
-                        else:
-                            expect('+', console_index)
-                    value = String_Concat(strings)
-                else:
-                    #raise error
-                    pass
+                expect('+', console_index)
+                strings = []
+                current_index -= 2
+                while True:
+                    if accept_type('var'):
+                        strings.append(expect_type('var', console_index))
+                    else:
+                        strings.append(expect_type('str', console_index))
+                    if check_line_end():
+                        break
+                    else:
+                        expect('+', console_index)
+                value = String_Concat(strings)
             else:
                 current_index -= 1
                 value = expect_type('str', console_index)
@@ -1263,7 +1256,7 @@ def file_parser(tokens, console_index, input_string, path):
             for_type = 'array'
         else:
             expect('=', console_index)
-        #flt - must use start/stop/step
+        #int must be used for start/stop/step
         if accept_type('int'):
             for_type = 'num'
             #start/stop/step need to be set to int to be used in loop
@@ -1286,7 +1279,7 @@ def file_parser(tokens, console_index, input_string, path):
             values = create_array()
         else:
             #raise error
-            pass
+            expect_type(['var', 'int'], console_index)
         return var, for_type, values
     def get_func_args(check_type):
         nonlocal current_index
@@ -1332,12 +1325,8 @@ def file_parser(tokens, console_index, input_string, path):
         expect('[', console_index)
         #check for single parent
         if not accept_token(']'):
-            if accept_type('var'):
-                parent = expect_type('var', console_index)
-                expect(']', console_index)
-            else:
-                #raise error
-                pass
+            parent = expect_type('var', console_index)
+            expect(']', console_index)
         else:
             parent = None
         return name, parent
@@ -1355,49 +1344,58 @@ def file_parser(tokens, console_index, input_string, path):
     def accept_token(token):
         '''returns boolean if next token is given token'''
         nonlocal current_index
-        if token == tokens[line][current_index].token:
-            current_index += 1
-            return True
+        if not check_line_end():
+            if token == tokens[line][current_index].token:
+                current_index += 1
+                return True
+            else:
+                return False
         else:
-            return False
+            raise_error('Syntax Error: Invalid Syntax', input_string, tokens[line][current_index - 1], path)
     #return boolean if next token has the same type as the inputted type
     def accept_type(token_type):
         '''returns boolen if next token is the given token type'''
         nonlocal current_index
-        if token_type == tokens[line][current_index].token_type:
-            #increase current index here?
-            return True
+        #check if there are tokens left to check
+        if not check_line_end():
+            if token_type == tokens[line][current_index].token_type:
+                return True
+            else:
+                return False
         else:
-            return False
+            raise_error('Syntax Error: Invalid Syntax', input_string, tokens[line][current_index - 1], path)
     #error if next token is not the same as input
-    def expect(token, console_index, error_type='Syntax'):
+    def expect(token, console_index):
         '''raises error if expected token is not next token'''
         nonlocal current_index
-        #check if equal, else raise error
-        if token == tokens[line][current_index].token:
-            current_index += 1
-            return tokens[line][current_index - 1]
+        #chcek if there are tokens left to check
+        if not check_line_end():
+            #check if equal, else raise error
+            if token == tokens[line][current_index].token:
+                current_index += 1
+                return tokens[line][current_index - 1]
+            else:
+                error_token = tokens[line][current_index]
+                out_length = len(f'[Out_{console_index}]: ')
+                #allows for diffferent errors to occur
+                raise_error(f'Syntax Error: Expected {token}', input_string, error_token, path)
         else:
-            error_token = tokens[line][current_index]
-            out_length = len(f'[Out_{console_index}]: ')
-            #allows for diffferent errors to occur
-            match error_type:
-                case 'Syntax':
-                    print(f'[Out_{console_index}]: Syntax Error: Expected {token}')
-            print(' ' * out_length + input_string)
-            print(' ' * out_length + ' ' * (error_token.location - len(error_token.token)) + '^' * len(error_token.token))
-            raise Parser_Error('')
+            raise_error(f'Syntax Error: Expected {token}', input_string, tokens[line][current_index - 1], path)
     #error if next token is not the same type as input
     def expect_type(token_types, console_index):
         '''Raises error if expected type isn't next token'''
         nonlocal current_index
-        #check if types are equal, else raise error
-        if tokens[line][current_index].token_type in token_types:
-            current_index += 1
-            return tokens[line][current_index - 1]
+        #check if there are tokens to check
+        if not check_line_end():
+            #check if types are equal, else raise error
+            if tokens[line][current_index].token_type in token_types:
+                current_index += 1
+                return tokens[line][current_index - 1]
+            else:
+                error_token = tokens[line][current_index]
+                raise_error(f'Type Error: {error_token.token} is not a {token_types}', input_string, error_token, path)
         else:
-            error_token = tokens[line][current_index]
-            raise_error(f'Type Error: {error_token.token} is not a {token_types}', input_string, error_token, path)
+            raise_error(f'Type Error: Missing token of type {token_types}', input_string, tokens[line][current_index - 1], path)
     #function to create statements
     def statement():
         nonlocal if_cache
@@ -1431,6 +1429,8 @@ def file_parser(tokens, console_index, input_string, path):
                     parent = if_cache[-1]
                 elif isinstance(if_cache[-1], Elif_statement):
                     parent = if_cache[-1]
+                else:
+                    raise_error('Syntax Error: Missing if/elif', input_string, tokens[line][current_index - 1], path)
                 #remove previous and add current to if cache
                 if_cache.pop()
                 expect('(', console_index)
@@ -1452,6 +1452,8 @@ def file_parser(tokens, console_index, input_string, path):
                 obj = Elif_statement(comp, st, parent)
                 if_cache.append(obj)
                 return obj
+            else:
+                raise_error('Syntax Error: Missing if/elif', input_string, tokens[line][current_index - 1], path)
         #create else statement
         elif accept_token('else'):
             if len(if_cache) > 0:
@@ -1460,6 +1462,8 @@ def file_parser(tokens, console_index, input_string, path):
                     parent = if_cache[-1]
                 elif isinstance(if_cache[-1], Elif_statement):
                     parent = if_cache[-1]
+                else:
+                    raise_error('Syntax Error: Missing if/elif', input_string, tokens[line][current_index - 1], path)
                 if_cache.pop()
                 #move to next line if at end of current line
                 change_line_end()
@@ -1473,6 +1477,8 @@ def file_parser(tokens, console_index, input_string, path):
                     st.append(get_element())
                 clear_if_cache()
                 return Else_statement(st, parent)
+            else:
+                raise_error('Syntax Error: Missing if/elif', input_string, tokens[line][current_index - 1], path)
         else:
             #clear if cache if there is not an if (if chain is done)
             clear_if_cache()
@@ -1514,21 +1520,14 @@ def file_parser(tokens, console_index, input_string, path):
                         #get new function
                         new_func = statement()
                         #functions are a dictionary with name as key
-                        #check if function already exists
-                        if not new_func.name.token in set(objects.keys()):
-                            objects[new_func.name.token] = new_func
-                        else:
-                            #raise error
-                            pass
+                        #function will overwrite previous function with the same name
+                        objects[new_func.name.token] = new_func
                     #check for classes
                     elif accept_token('class'):
                         current_index -= 1
                         new_class = statement()
-                        if not new_class.name.token in set(objects.keys()):
-                            objects[new_class.name.token] = new_class
-                        else:
-                            #raise error
-                            pass
+                        #will overwrite previously defined class
+                        objects[new_class.name.token] = new_class
                     change_line_end()
                     #check for closing }
                     if accept_token('}'):
@@ -1541,16 +1540,14 @@ def file_parser(tokens, console_index, input_string, path):
                     values = create_return()
                     return Return(values)
                 else:
-                    #raise error
-                    pass
+                    raise_error('Syntax Error: Keyword "return" cannot be used outside a function block', input_string, tokens[line][current_index - 1], path)
             #breaking from loop
             elif accept_token('break'):
                 #make sure currently inside loop block (functions can't break loops, and if/elif/else do nto update current block)
                 if current_block[-1] == 'loop':
                     return Break()
                 else:
-                    #raise error
-                    pass
+                    raise_error('Syntax Error: Keyword "break" cannot be used outside of a while or for loop block', input_string, tokens[line][current_index - 1], path)
             #global/nonlocal for functions
             elif accept_token('global'):
                 #make sure inside a function
@@ -1558,16 +1555,14 @@ def file_parser(tokens, console_index, input_string, path):
                     var = expect_type('var', console_index)
                     return Global(var)
                 else:
-                    #raise error
-                    pass
+                    raise_error('Syntax Error: Keyword "global" cannot be used outside a function block', input_string, tokens[line][current_index - 1], path)
             elif accept_token('nonlocal'):
                 #make sure inside a function
                 if 'func' in current_block:
                     var = expect_type('var', console_index)
                     return Nonlocal(var)
                 else:
-                    #raise error
-                    pass
+                    raise_error('Syntax Error: Keyword "nonlocal" cannot be used outside a function block', input_string, tokens[line][current_index - 1], path)
             #create while loop
             elif accept_token('while'):
                 #get comparison and setup tokens
@@ -1622,16 +1617,16 @@ def file_parser(tokens, console_index, input_string, path):
                     return Input()
             #loading files
             elif accept_token('open'):
-                path = expect_type('path', console_index)
+                file_path = expect_type('path', console_index)
                 expect('as', console_index)
                 var = expect_type('var', console_index)
-                return Open_File(path, var)
+                return Open_File(file_path, var)
             #saving files
             elif accept_token('save'):
                 var = expect_type('var', console_index)
                 expect('in', console_index)
-                path = expect_type('path', console_index)
-                return Save_File(var, path)
+                file_path = expect_type('path', console_index)
+                return Save_File(var, file_path)
             #importing other files
             elif accept_token('import'):
                 #load file
@@ -1639,15 +1634,15 @@ def file_parser(tokens, console_index, input_string, path):
                 try: 
                     with open(file_path.token + '.microlang', 'r') as file:
                         file = file.read()
-                except Exception as e:
-                    #raise error
-                    print(e)
-                    pass
+                except FileNotFoundError:
+                    raise_error('File Not Found Error: File "' + file_path.token + '" could not be found', input_string, tokens[line][current_index - 1], path)
+                except Exception:
+                    raise_error('File IO Error: File "' + file_path.token + '" could not be read', input_string, tokens[line][current_index -1], path)
                 file_name = file_path.token
                 #run other file through lexer
-                file_tokens = lexer.file_lexer(file, console_index)
+                file_tokens = lexer.file_lexer(file, console_index, file_path.token)
                 #parse the otehr file
-                file_syntax_tree = file_parser(file_tokens, console_index, file)
+                file_syntax_tree = file_parser(file_tokens, console_index, file, file_path.token)
                 #get only classes and functions from file
                 objects = {}
                 for item in file_syntax_tree:
