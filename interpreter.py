@@ -670,7 +670,14 @@ def interpreter(syntax_tree, console_index, input_string):
         print('')
 
 #interpreter function for files
-def file_interpreter(syntax_tree, console_index, input_string):
+def file_interpreter(syntax_tree, console_index, input_string, path):
+    def raise_error(message, input_string, line, file):
+        print('File "' + file + '", Line ' + str(line + 1) +':')
+        print(message)
+        print(input_string[line])
+        print('^'*len(input_string[line]))
+        #raise error
+        raise Interpreter_Error(message)
     variables = {}
     #create global variables node, which has no parent
     global_vars = Node(None)
@@ -1254,27 +1261,26 @@ def file_interpreter(syntax_tree, console_index, input_string):
             current_scope.class_vars = current_scope.parent.class_vars
         except:
             pass
-        #iterate through args and add them to variables
-        for num, arg in enumerate(func.args):
-            #try except in case not enough arguments were provided
-            try:
-                if element.args[num].token_type == arg['type'].token:
-                    current_scope.variables[arg['name'].token] = Variable(arg['type'].token, element.args[num].token)
-                #handle inputted variables
-                elif element.args[num].token_type == 'var':
-                    #get var
-                    var = search_vars(current_scope, element.args[num].token)
-                    if var.type == arg['type'].token:
-                        current_scope.variables[arg['name'].token] = Variable(arg['type'].token, var.value)
+        #make sure the right number of arguments were provided
+        if len(element.args) == len(func.args):
+            #iterate through args and add them to variables
+            for num, arg in enumerate(func.args):
+                    if element.args[num].token_type == arg['type'].token:
+                        current_scope.variables[arg['name'].token] = Variable(arg['type'].token, element.args[num].token)
+                    #handle inputted variables
+                    elif element.args[num].token_type == 'var':
+                        #get var
+                        var = search_vars(current_scope, element.args[num].token)
+                        if var.type == arg['type'].token:
+                            current_scope.variables[arg['name'].token] = Variable(arg['type'].token, var.value)
+                        else:
+                            raise_error('Type Error: Variable should be of type "' + arg['type'].token + '" not "' + var.type + '"', input_string, element.line, path)
                     else:
-                        #raise error
-                        pass
-                else:
-                    #raise error
-                    pass
-            except:
-                #raise error
-                pass
+                        raise_error('Type Error: Value should be of type "' + arg['type'].token +'" not "' + element.args[num].token_type +'"', input_string, element.line, path)
+        elif len(element.args) > len(func.args):
+            raise_error('Type Error: Provided ' + str(len(element.args)) + ' arguments but function "' + func.name.token + '" requires ' + str(len(func.args)), input_string, element.line, path)
+        elif len(element.args) < len(func.args):
+            raise_error('Type Error: Function "' + func.name.token + '" requires ' + str(len(func.args)) + ' arguments but only ' + str(len(element.args)) + ' were provided', input_string, element.line, path)
         #add any additonal variables (for instance variables)
         current_scope.variables = current_scope.variables | vars_to_add
         #run function code
@@ -1398,14 +1404,11 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     if variable.type == 'array':
                         array = variable.value
                     else:
-                        #raise error
-                        pass
+                        raise_error('Type Error: Variable should be of type "array", not "' + variable.type + '"', input_string, element.line, path)
                 elif element.values.token_type == 'array':
-                    #raise error
                     array = element.values.token
                 else:
-                    #raise error
-                    pass
+                    raise_error('Type Error: Value should be of type "array", not "' + element.values.token_type + '"', input_string, element.line, path)
                 #initalise var saving stuff
                 type_token = Token('array', 'type')
                 value_token = Token('0', 'str')
@@ -1461,8 +1464,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                 #return the value
                 return value
             else:
-                #raise error
-                pass
+                raise_error('Type Error: Return should be of type "' + current_scope.return_type.token + '" not "' + value.token_type + '"', input_string, element.line, path)
         elif element.type == 'change_var_value':
             change_var_value(element)
         #save class as variable
@@ -1483,8 +1485,7 @@ def file_interpreter(syntax_tree, console_index, input_string):
                     #add parent functions to class list of functions. The child function with have priority for duplicate function
                     element.functions = parent_funcs | element.functions
                 else:
-                    #raise error
-                    pass
+                    raise_error('Type Error: Object of type "' + parent.type + '" cannot be parent of a class', input_string, element.line, path)
             current_scope.variables[element.name.token] = element
         #open file and store it as a string
         elif element.type == 'open_file':
@@ -1492,9 +1493,10 @@ def file_interpreter(syntax_tree, console_index, input_string):
             try:
                 with open(element.path.token, 'r') as f:
                     file = f.read()
-            except:
-                #raise error
-                pass
+            except FileNotFoundError:
+                raise_error('File Not Found Error: File "' + element.path.token + '" could not be found', input_string, element.line, path)
+            except Exception as e:
+                raise_error('File IO Error: File "' + element.path.token + '" could not be read', input_string, element.line, path)
             #save file as var
             current_scope.variables[element.var.token] = Variable('str', file)
         #save variable to document
@@ -1504,13 +1506,12 @@ def file_interpreter(syntax_tree, console_index, input_string):
             #prepare variable to save
             if var.type == 'str' or var.type == 'bool':
                 value = var.value
-            elif var.type == 'flt':
+            elif var.type == 'flt' or var.type == 'int':
                 value = str(var.value)
             elif var.type == 'array':
                 value = convert_array_tokens(var.value)
             else:
-                #raise error
-                pass
+                raise_error(f'Type Error: Type "{var.type}"" cannot be saved to file', input_string, element.line, path)
             #open and save to file
             with open(element.path.token, 'w') as file:
                 file.write(value)

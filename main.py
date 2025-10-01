@@ -1,11 +1,12 @@
 #TODO:
 #fix all remaining bugs :)
-#replace/remove console code?
+#replace/remove interactive console code?
 
 #single raise error function for interpreter
 #fill in all missing areas requireing a raise error
 #add try/except/finally block
-#make elements produced by parser store a line to display during interpreter errors
+#store input string and path in classes and functions so imports will work with error messages
+#look at line 1777 in parser- no element is created
 
 #import standerd libraries
 import traceback
@@ -56,7 +57,7 @@ def main():
             return
         #interpret command to python code
         try:
-            interpreter.file_interpreter(syntax_tree, index, file)
+            interpreter.file_interpreter(syntax_tree, index, file, path)
         #handle errors
         except interpreter.Interpreter_Error:
             index += 1 

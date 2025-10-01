@@ -1,0 +1,10 @@
+make flt a = 0.0
+
+#this should raise a type error
+class b [ a ]
+{
+    def __init__ [ ] -> void
+    {
+        
+    }
+}

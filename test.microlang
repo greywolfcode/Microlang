@@ -1,4 +1,10 @@
-elif ( 1 == 4 )
+
+
+func a [ int b ] -> str
 {
-    
+    return b
 }
+
+make str b = 's'
+
+a [ 8 ]

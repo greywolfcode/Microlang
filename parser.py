@@ -13,176 +13,207 @@ class Token():
         self.token_type = token_type
         self.type = 'token'
     def print_vars(self):
-        print(self.token, self.token_type, self.location)
+        print(self.token, self.token_type)
 #class to make if cache work better
 class If_Block():
     def __init__(self):
         self.type = 'if_block'
 #classes for output elements
 class If_statement():
-    def __init__(self, comparison, statement):
+    def __init__(self, comparison, statement, line):
         self.comparison = comparison 
         self.statement = statement
         self.true = False
+        self.line = line
         self.type = 'if'
 class Elif_statement():
-    def __init__(self, comparison, statement, parent):
+    def __init__(self, comparison, statement, parent, line):
         self.comparison = comparison 
         self.statement = statement
         self.parent = parent
         self.true = False
+        self.line = line
         self.type = 'elif'
 class Then_statement():
-    def __init__ (self, statement):
+    def __init__ (self, statement, line):
         self.statement = statement
+        self.line = line
         self.type = 'then'
 class Else_statement():
-    def __init__ (self, statement, parent):
+    def __init__ (self, statement, parent, line):
         self.statement = statement
         self.parent = parent
+        self.line = line
         self.type = 'else'
 class Function():
-    def __init__(self, name, args, statement, return_type):
+    def __init__(self, name, args, statement, return_type, line):
         self.name = name
         self.args = args
         self.statement = statement
         self.return_type = return_type
+        self.line = line
         self.type = 'function'
 class Global():
-    def __init__(self, var):
+    def __init__(self, var, line):
         self.var = var
+        self.line = line
         self.type = 'global'
 class Nonlocal():
-    def __init__(self, var):
+    def __init__(self, var, line):
         self.var = var
+        self.line = line
         self.type = 'nonlocal'
 class Class():
-    def __init__(self, name, parent, objects):
+    def __init__(self, name, parent, objects, line):
         self.name = name
         self.parent = parent
         self.functions = objects
+        self.line = line
         self.type = 'class'
 class Get_Class_Value():
-    def __init__(self, instance, var):
+    def __init__(self, instance, var, line):
         self.instance = instance
         self.var = var
+        self.line = line
         self.type = 'get_class_value'
 class Make_Class_Instance():
-    def __init__(self, name, args, outer_classes):
+    def __init__(self, name, args, outer_classes, line):
         self.name = name
         self.args = args
         self.outer_classes = outer_classes
+        self.line = line
         self.type = 'make_class_instance'
 class While_Loop():
-    def __init__(self, comparison, statement):
+    def __init__(self, comparison, statement, line):
         self.comparison = comparison
         self.statement = statement
+        self.line = line
         self.type = 'while'
 class For_Loop():
-    def __init__(self, var, for_type, values, statement):
+    def __init__(self, var, for_type, values, statement, line):
         self.var = var
         self.for_type = for_type
         self.values = values
         self.statement = statement
+        self.line = line
         self.type = 'for'
 class Free_statement():
-    def __init__ (self, var):
+    def __init__ (self, var, line):
         self.var = var
+        self.line = line
         self.type = 'free'
 class Make_statement():
-    def __init__ (self, var_type, var, value):
+    def __init__ (self, var_type, var, value, line):
         self.var_type = var_type
         self.var = var
         self.value = value
+        self.line = line
         self.type = 'make'
 class Change_Var_Value():
-    def __init__(self, var, value, indexes):
+    def __init__(self, var, value, indexes, line):
         self.var = var
         self.value = value
-        #incase of modifying an array
+        #in case of modifying an array
         self.indexes = indexes
+        self.line = line
         self.type = "change_var_value"
 class Changer():
-    def __init__(self, value, output):
+    def __init__(self, value, output, line):
         self.value = value
         self.output = output
+        self.line = line
         self.type = 'changer'
 class Open_File():
-    def __init__(self, path, var):
+    def __init__(self, path, var, line):
         self.path = path
         self.var = var
+        self.line = line
         self.type = 'open_file'
 class Save_File():
-    def __init__(self, var, path):
+    def __init__(self, var, path, line):
         self.var = var
         self.path = path 
+        self.line = line
         self.type = 'save_file'
 class Run_Func():
     '''Functions on variable objects'''
-    def __init__(self, value, output):
+    def __init__(self, value, output, line):
         self.value = value
         self.output = output
+        self.line = line
         self.type = 'run_func'
 class Custom_Func():
     '''For running lone functions'''
-    def __init__(self, name, args):
+    def __init__(self, name, args, line):
         self.name = name
         self.args = args
+        self.line = line
         self.type = 'custom_func'
 class Class_Func():
     '''For running functions that are part of a class'''
-    def __init__(self, instance, name, args):
+    def __init__(self, instance, name, args, line):
         self.instance = instance
         self.name = name
         self.args = args
+        self.line = line
         self.type = 'class_func'
 class Return():
-    def __init__(self, value):
+    def __init__(self, value, line):
         self.value = value
+        self.line = line
         self.type = 'return'
 class Break():
-    def __init__ (self):
+    def __init__ (self, line):
+        self.line = line
         self.type = 'break'
 class Comparison():
-    def __init__(self, left, comp, right):
+    def __init__(self, left, comp, right, line):
         self.left = left
         self.comp_op = comp 
         self.right = right
+        self.line = line
         self.type = 'comp'
 class Not_Statement():
-    def __init__(self, value):
+    def __init__(self, value, line):
         self.value = value
+        self.line = line
         self.type = 'not_statement'
 class Equation():
-    def __init__(self, postfix):
+    def __init__(self, postfix, line):
         self.postfix = postfix
+        self.line = line
         self.type = 'equation'
     def print_postfix(self):
         for token in self.postfix:
             print(token.token)
 class Display():
-    def __init__(self, value):
+    def __init__(self, value, line):
         self.value = value
+        self.line = line
         self.type = 'display'
 class Input():
-    def __init__(self, string=Token('', 'str')):
+    def __init__(self, line, string=Token('', 'str')):
         self.type = 'input'
+        self.line = line
         self.string = string
 class String_Slice():
-    def __init__(self, var, start, stop, step):
+    def __init__(self, var, start, stop, step, line):
         self.var = var
         self.start = start
         self.stop = stop
         self.step = step
+        self.line = line
         self.type = 'string_slice'
 class String_Concat():
-    def __init__(self, strings):
+    def __init__(self, strings, line):
         self.strings = strings
+        self.line = line
         self.type = 'string_concat'
 class Get_Array_Value():
-    def __init__(self, var, index):
+    def __init__(self, var, index, line):
         self.var = var
         self.index = index
+        self.line = line
         self.type = 'get_array_value'
 #function to raise error
 def raise_error(message, input_string, token, file):
@@ -823,6 +854,7 @@ def file_parser(tokens, console_index, input_string, path):
     def equation():
         '''Uses Shunting Yard Algorithm'''
         nonlocal current_index
+        current_error_line = error_line()
         output = []
         operator_stack = []
         #define presedence for operators
@@ -883,10 +915,11 @@ def file_parser(tokens, console_index, input_string, path):
         #add all remaining operators to output
         while len(operator_stack) > 0:
             output.append(operator_stack.pop())
-        return Equation(output)
+        return Equation(output, current_error_line)
     #function to create comparisons
     def comparison():
         nonlocal current_index
+        current_error_line = error_line()
         '''Creates Comparison Objects'''
         #get parts of the comparison object
         if accept_token('('):
@@ -897,10 +930,10 @@ def file_parser(tokens, console_index, input_string, path):
             if accept_token('('):
                 value = comparison()
                 expect(')', console_index)
-                left = Not_Statement(value)
+                left = Not_Statement(value, current_error_line)
             else:
                 value = tokens[line][current_index]
-                left = Not_Statement(value)
+                left = Not_Statement(value, current_error_line)
                 current_index += 1
             #check if only using not
             if accept_token(')'):
@@ -916,10 +949,10 @@ def file_parser(tokens, console_index, input_string, path):
             if accept_token('('):
                 value = comparison()
                 expect(')', console_index)
-                right = Not_Statement(value)
+                right = Not_Statement(value, current_error_line)
             else:
                 value = tokens[line][current_index]
-                right = Not_Statement(value)
+                right = Not_Statement(value, current_error_line)
                 current_index += 1
         else:
             right = expect_type(['var', 'flt', 'int', 'str', 'bool'], console_index)
@@ -929,7 +962,7 @@ def file_parser(tokens, console_index, input_string, path):
             if (not left.token_type in {'var', 'flt', 'int'}) or (not right.token_type in {'var', 'flt', 'int'}):
                 #raise error if wrong comparison is used for a number
                 raise_error(f'Type Error: {comp.token} is not supported for non-number objects', input_string, comp, path)
-        return Comparison(left, comp, right)
+        return Comparison(left, comp, right, current_error_line)
     def create_display():
         '''Creates Display Objects'''
         nonlocal current_index
@@ -974,6 +1007,7 @@ def file_parser(tokens, console_index, input_string, path):
         return var_type, var_name, value
     def string_array_retrieving(var):
         '''Create get array value/string slicing objects'''
+        current_error_line = error_line()
         #uses same slicing syntax as python
         start = expect_type('int', console_index)
         #check for string slicing (:) or array value ( ) )
@@ -989,20 +1023,21 @@ def file_parser(tokens, console_index, input_string, path):
                 expect(':', console_index)
                 step = expect_type('int', console_index)
                 expect(')', console_index)
-            value = String_Slice(var, start, stop, step)
+            value = String_Slice(var, start, stop, step, current_error_line)
         return value
     def get_var_value(var_type, do_type_check=True):
         nonlocal current_index
+        current_error_line = error_line()
         used = False
         #allow to get user input set to a variable. This will always be a string, and should be set as so
         if accept_token('input') and (var_type.token == 'str' or do_type_check == False):
             if not check_line_end():
                 if accept_type('str'):
-                    value = Input(string=expect_type('str', console_index))
+                    value = Input(current_error_line, string=expect_type('str', console_index))
                 else:
-                    value = Input()
+                    value = Input(current_error_line)
             else:
-                value = Input()
+                value = Input(current_error_line)
             used = True
         #check if running function/setting to variable
         elif accept_type('var'):
@@ -1013,7 +1048,7 @@ def file_parser(tokens, console_index, input_string, path):
                     #decrement current_index, it was increased to run the checks
                     current_index -= 2
                     name, args = create_func(check_type=False)
-                    value = Custom_Func(name, args)
+                    value = Custom_Func(name, args, current_error_line)
                     #tell next chain of if statements not to run
                     used = True
                 #for running instances of classes
@@ -1032,20 +1067,20 @@ def file_parser(tokens, console_index, input_string, path):
                             #retrieve variable_name
                             current_index -= 1
                             var = expect_type('var', console_index)
-                            value = Get_Class_Value(instance, var)
+                            value = Get_Class_Value(instance, var, current_error_line)
                             break
                         else:
                             if accept_token('['):
                                 #decrement current_index (accept_token increases current_index)
                                 current_index -= 2
                                 name, args = create_func(check_type=False)
-                                value = Class_Func(instance, name, args)
+                                value = Class_Func(instance, name, args, current_error_line)
                                 break
                             else:
                                 #retrieve variable name
                                 current_index -= 1
                                 value = expect_type('var', console_index)
-                                value = Get_Class_Value(instance, value)
+                                value = Get_Class_Value(instance, value, current_error_line)
                                 instance = value
                                 if check_line_end():
                                     break
@@ -1095,7 +1130,7 @@ def file_parser(tokens, console_index, input_string, path):
                     break
             #hijacking create_func to get class definition
             name, args = create_func(check_type=False)
-            value = Make_Class_Instance(name, args, outer_classes)
+            value = Make_Class_Instance(name, args, outer_classes, current_error_line)
         #check if a variable function is being run
         elif accept_type('type') or accept_type('keyword'):
             value = create_run_func()
@@ -1156,7 +1191,7 @@ def file_parser(tokens, console_index, input_string, path):
                         break
                     else:
                         expect('+', console_index)
-                value = String_Concat(strings)
+                value = String_Concat(strings, current_Error_line)
             else:
                 current_index -= 1
                 value = expect_type('str', console_index)
@@ -1396,11 +1431,16 @@ def file_parser(tokens, console_index, input_string, path):
                 raise_error(f'Type Error: {error_token.token} is not a {token_types}', input_string, error_token, path)
         else:
             raise_error(f'Type Error: Missing token of type {token_types}', input_string, tokens[line][current_index - 1], path)
+    def error_line():
+        '''Returns error line for use in interpreter'''
+        return tokens[line][current_index].line
     #function to create statements
     def statement():
         nonlocal if_cache
         '''Makes Statement Objects'''
         nonlocal current_index, line
+        #get error line
+        current_error_line = error_line()
         #create if statement
         if accept_token('if'):
             expect('(', console_index)
@@ -1419,7 +1459,7 @@ def file_parser(tokens, console_index, input_string, path):
             while not accept_token('}'):
                 st.append(get_element())
             clear_if_cache()
-            obj = If_statement(comp, st)
+            obj = If_statement(comp, st, current_error_line)
             if_cache.append(obj)
             return obj
         elif accept_token('elif'):
@@ -1449,7 +1489,7 @@ def file_parser(tokens, console_index, input_string, path):
                 while not accept_token('}'):
                     st.append(get_element())
                 clear_if_cache()
-                obj = Elif_statement(comp, st, parent)
+                obj = Elif_statement(comp, st, parent, current_error_line)
                 if_cache.append(obj)
                 return obj
             else:
@@ -1476,7 +1516,7 @@ def file_parser(tokens, console_index, input_string, path):
                 while not accept_token('}'):
                     st.append(get_element())
                 clear_if_cache()
-                return Else_statement(st, parent)
+                return Else_statement(st, parent, current_error_line)
             else:
                 raise_error('Syntax Error: Missing if/elif', input_string, tokens[line][current_index - 1], path)
         else:
@@ -1485,7 +1525,7 @@ def file_parser(tokens, console_index, input_string, path):
             #create make statement 
             if accept_token('make'):
                 var_type, var, value = create_make()
-                return Make_statement(var_type, var, value)
+                return Make_statement(var_type, var, value, current_error_line)
             #create function
             elif accept_token('func'):
                 #get name and args
@@ -1502,7 +1542,7 @@ def file_parser(tokens, console_index, input_string, path):
                     st.append(get_element())
                 #update current_block
                 current_block.pop()
-                return Function(name, args, st, return_type)
+                return Function(name, args, st, return_type, current_error_line)
             #create class
             elif accept_token('class'):
                 name, parents = create_class()
@@ -1532,39 +1572,41 @@ def file_parser(tokens, console_index, input_string, path):
                     #check for closing }
                     if accept_token('}'):
                         break
-                return Class(name, parents, objects)
+                return Class(name, parents, objects, current_error_line)
             #return statements
             elif accept_token('return'):
                 #make sure currently inside a function block
                 if 'func' in current_block:
-                    values = create_return()
-                    return Return(values)
+                    value = create_return()
+                    return Return(value, current_error_line)
                 else:
                     raise_error('Syntax Error: Keyword "return" cannot be used outside a function block', input_string, tokens[line][current_index - 1], path)
             #breaking from loop
             elif accept_token('break'):
                 #make sure currently inside loop block (functions can't break loops, and if/elif/else do nto update current block)
                 if current_block[-1] == 'loop':
-                    return Break()
+                    return Break(current_error_line)
                 else:
                     raise_error('Syntax Error: Keyword "break" cannot be used outside of a while or for loop block', input_string, tokens[line][current_index - 1], path)
             #global/nonlocal for functions
             elif accept_token('global'):
+                line = error_line()
                 #make sure inside a function
                 if 'func' in current_block:
                     var = expect_type('var', console_index)
-                    return Global(var)
+                    return Global(var, current_error_line)
                 else:
                     raise_error('Syntax Error: Keyword "global" cannot be used outside a function block', input_string, tokens[line][current_index - 1], path)
             elif accept_token('nonlocal'):
                 #make sure inside a function
                 if 'func' in current_block:
                     var = expect_type('var', console_index)
-                    return Nonlocal(var)
+                    return Nonlocal(var, current_error_line)
                 else:
                     raise_error('Syntax Error: Keyword "nonlocal" cannot be used outside a function block', input_string, tokens[line][current_index - 1], path)
             #create while loop
             elif accept_token('while'):
+                line = error_line()
                 #get comparison and setup tokens
                 expect('(', console_index)
                 comp = comparison()
@@ -1581,7 +1623,7 @@ def file_parser(tokens, console_index, input_string, path):
                     st.append(get_element())
                 #update current block
                 current_block.pop()
-                return While_Loop(comp, st)
+                return While_Loop(comp, st, current_error_line)
             #create for loop
             elif accept_token('for'):
                 var, for_type, values = create_for()
@@ -1597,36 +1639,35 @@ def file_parser(tokens, console_index, input_string, path):
                     st.append(get_element())
                 #update current block
                 current_block.pop()
-                return For_Loop(var, for_type, values, st)
+                return For_Loop(var, for_type, values, st, current_error_line)
             #display statements
             elif accept_token('display'):
-                #current_index += 1 
                 value = create_display()
-                return Display(value)
+                return Display(value, current_error_line)
             elif accept_token('free'):
                 var = create_free()
-                return Free_statement(var)
+                return Free_statement(var, current_error_line)
             elif accept_token('input'):
                 #current_index += 1
                 if check_line_end():
                     if accept_type('str'):
-                        return Input(string=expect_type('str', console_index))
+                        return Input(current_error_line, string=expect_type('str', console_index))
                     else:
-                        return Input()
+                        return Input(current_error_line)
                 else:
-                    return Input()
+                    return Input(current_error_line)
             #loading files
             elif accept_token('open'):
                 file_path = expect_type('path', console_index)
                 expect('as', console_index)
                 var = expect_type('var', console_index)
-                return Open_File(file_path, var)
+                return Open_File(file_path, var, current_error_line)
             #saving files
             elif accept_token('save'):
                 var = expect_type('var', console_index)
                 expect('in', console_index)
                 file_path = expect_type('path', console_index)
-                return Save_File(var, file_path)
+                return Save_File(var, file_path, current_error_line)
             #importing other files
             elif accept_token('import'):
                 #load file
@@ -1639,9 +1680,9 @@ def file_parser(tokens, console_index, input_string, path):
                 except Exception:
                     raise_error('File IO Error: File "' + file_path.token + '" could not be read', input_string, tokens[line][current_index -1], path)
                 file_name = file_path.token
-                #run other file through lexer
+                #run inported file through lexer
                 file_tokens = lexer.file_lexer(file, console_index, file_path.token)
-                #parse the otehr file
+                #parse the inporter file
                 file_syntax_tree = file_parser(file_tokens, console_index, file, file_path.token)
                 #get only classes and functions from file
                 objects = {}
@@ -1712,6 +1753,7 @@ def file_parser(tokens, console_index, input_string, path):
         elif accept_type('var'):
             #increase index to check for equals
             current_index += 1
+            current_error_line = error_line()
             #check if changing variable type
             if accept_token("=") or accept_token('(') or accept_token('.'):
                 #decrement by 2 to get variable name
@@ -1746,19 +1788,20 @@ def file_parser(tokens, console_index, input_string, path):
                 else:
                     #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked
                     value = get_var_value(var, do_type_check=False)
-                    element = Change_Var_Value(var, value, indexes)
+                    element = Change_Var_Value(var, value, indexes, current_error_line)
             else:
                 current_index -= 1
                 name, args= create_func(check_type=False)
-                element = Custom_Func(name, args)
+                element = Custom_Func(name, args, current_error_line)
         #check for special case variables
         elif accept_type('special_var'):
             #initalising parent of class
             if accept_token('parent.__init__'):
                 current_index -= 1
+                current_error_line = tokens[line][current_index].line
                 name = expect_type('special_var', console_index)
                 args = get_func_args(False)
-                element = Custom_Func(name, args)
+                element = Custom_Func(name, args, current_error_line)
         #move to next line if at end of current line
         change_line_end()
         return element
