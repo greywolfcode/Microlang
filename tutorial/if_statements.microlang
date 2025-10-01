@@ -1,4 +1,4 @@
-make flt x = 10
+make int x = 10
 #basic if statements
 if ( x == 2 ) then
 {

@@ -2,11 +2,9 @@
 #fix all remaining bugs :)
 #replace/remove interactive console code?
 
-#single raise error function for interpreter
 #fill in all missing areas requireing a raise error
 #add try/except/finally block
 #store input string and path in classes and functions so imports will work with error messages
-#look at line 1777 in parser- no element is created
 
 #import standerd libraries
 import traceback

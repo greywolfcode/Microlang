@@ -1235,6 +1235,7 @@ def file_parser(tokens, console_index, input_string, path):
         return Token(array, 'array')
     def create_run_func():
         '''Create Changer Object'''
+        current_error_line = error_line()
         nonlocal current_index
         #change type of variable
         if accept_type('type'):
@@ -1279,7 +1280,7 @@ def file_parser(tokens, console_index, input_string, path):
                 print(' ' * out_length + ' ' * (tokens[line][current_index].location - len(tokens[line][current_index].token)) + '^' * len(tokens[line][current_index].token))
                 raise Parser_Error('')
         expect(']', console_index)
-        return Run_Func(value, output)
+        return Run_Func(value, output, current_error_line)
     def create_free():
         return expect_type('var', console_index)
     def create_for():
@@ -1784,11 +1785,11 @@ def file_parser(tokens, console_index, input_string, path):
                         elif accept_token('.'):
                             next_type = 'class_value'
                         else:
+                            expect('=', console_index)
                             break
-                else:
-                    #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked
-                    value = get_var_value(var, do_type_check=False)
-                    element = Change_Var_Value(var, value, indexes, current_error_line)
+                #get variable name. Using the variable as stand-in token for a type because it is not being used, but still being checked
+                value = get_var_value(var, do_type_check=False)
+                element = Change_Var_Value(var, value, indexes, current_error_line)
             else:
                 current_index -= 1
                 name, args= create_func(check_type=False)
