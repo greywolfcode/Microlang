@@ -1,10 +1,11 @@
-
-
-func a [ int b ] -> str
+class a [ ]
 {
-    return b
+    def __init__ [ ] -> void
+    {
+        make int self.b = 8
+    }
 }
 
-make str b = 's'
+make instance c = a [ ]
 
-a [ 8 ]
+c . g = 9

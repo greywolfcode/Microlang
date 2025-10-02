@@ -61,29 +61,6 @@ class Class_Instance():
         self.instance_class = instance_class
         self.instance_vars = instance_vars
         self.type = 'class_instance'
-#define class structure for variable scope tree
-class Node():
-    def __init__(self, parent):
-        #store dictionary of variables
-        self.variables = {}
-        #store parent scope
-        self.parent = parent
-def search_vars(current_scope, variable, all_scopes=True, give_value=True):
-    '''Get a variable moving up the scope tree '''
-    #check if variable is in local scope
-    if variable in set(current_scope.variables.keys()):
-        #allows getting mutable list oject to gat refrence to it
-        if give_value == True:
-            return current_scope.variables[variable]
-        else:
-            return current_scope.variables[variable]
-    #check if there is no parent, or if it shouldn't search parent scopes
-    elif current_scope.parent == None or all_scopes == False:
-        #variable does not exist - raise error
-        pass
-    #search parent scope for variable
-    else:
-        return search_vars(current_scope.parent, variable)
 #function to make arrays able to be displayed; outside interpreter function for displaying all variables
 def convert_array_tokens(array):
     #deep copy array so editing it or inside arrays will not effect the actual array 
@@ -671,19 +648,45 @@ def interpreter(syntax_tree, console_index, input_string):
 
 #interpreter function for files
 def file_interpreter(syntax_tree, console_index, input_string, path):
-    def raise_error(message, input_string, line, file):
+    #define class structure for variable scope tree
+    class Node():
+        def __init__(self, parent, input_string=input_string, path=path):
+            #store dictionary of variables
+            self.variables = {}
+            self.input_string = input_string
+            self.path = path
+            #store parent scope
+            self.parent = parent
+    def raise_error(message, line):
+        file = current_scope.path 
+        input_string = current_scope.input_string
         print('File "' + file + '", Line ' + str(line + 1) +':')
         print(message)
         print(input_string[line])
         print('^'*len(input_string[line]))
         #raise error
         raise Interpreter_Error(message)
+    def search_vars(current_scope, variable, line, all_scopes=True, give_value=True):
+        '''Get a variable moving up the scope tree '''
+        #check if variable is in local scope
+        if variable in set(current_scope.variables.keys()):
+            #allows getting mutable list oject to gat refrence to it
+            if give_value == True:
+                return current_scope.variables[variable]
+            else:
+                return current_scope.variables[variable]
+        #check if there is no parent, or if it shouldn't search parent scopes
+        elif current_scope.parent == None or all_scopes == False:
+            raise_error('Name Error: Variable of name "' + variable + '" does not exist', line)
+        #search parent scope for variable
+        else:
+            return search_vars(current_scope.parent, variable)
     variables = {}
     #create global variables node, which has no parent
     global_vars = Node(None)
     #define current scope
     current_scope = global_vars
-    def interpret_equation(postfix):
+    def interpret_equation(postfix, line):
         '''Interpret and Calulate Postfix Expressions'''
         output_stack = []
         for token in postfix:
@@ -697,7 +700,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     #add tokenized variable to output stack
                     output_stack.append(Token(var.value, var.type))
                 else:
-                    print(f'[Out_{console_index}]: Type Error: {token.token} is not a float or int')
+                    raise_error('Type Error: Variable of type "' + var.type + '" cannot be used in equation', line)
                     out_length = len(f'[Out_{console_index}]: ')
                     print(' ' * out_length + input_string)
                     print(' ' * out_length + ' ' * (element.value.location - len(element.value.token)) + '^' * len(element.value.token))
@@ -719,8 +722,8 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                         value = float(element.value.token)
                         return Token(value, 'flt')
                     except:
-                        #raise error
-                        pass
+                        #only will error if converting a string
+                        raise_error('Value Error: String "' + element.value.token + '" could not be converted to type "int"', element.line)
                 elif element.value.token_type == 'var':
                     #check if variable exists
                     var = search_vars(current_scope, element.value.token)
@@ -728,11 +731,9 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                         value = float(var.value)
                         return Token(value, 'flt')
                     except:
-                        #raise error
-                        pass
+                        raise_error('Type Error: Variable of type "' + var.type + '" cannot be converted to type "flt"', element.line)
                 else:
-                    #raise error 
-                    pass
+                    raise_error('Type Error: Object of type "' + element.value.token_type + '" could not be converted to type "flt"', element.line)
             elif element.output.token == 'int':
                 #can only convert strings and floats to ints
                 if element.value.token_type == 'str' or element.value.token_type == 'flt' or element.value.token_type == 'int':
@@ -740,8 +741,8 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                         value = int(element.value.token)
                         return Token(value, 'int')
                     except:
-                        #raise error
-                        pass
+                        #will only error if converting a string
+                        raise_error('Value Error: String "' + element.value.token + '" could not be converted to type "int"', element.line)
                 elif element.value.token_type == 'var':
                     #check if variable exists
                     var = search_vars(current_scope, element.value.token)
@@ -749,11 +750,9 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                         value = int(var.value)
                         return Token(value, 'int')
                     except:
-                        #raise error
-                        pass
+                        raise_error('Type Error: Variable of type "' + var.type  + '" could not be converted to type "int"', element.line)
                 else:
-                    #raise error 
-                    pass
+                    raise_error('Type Error: Object of type "' + element.value.token_type + '" could not be converted to type "int"', element.line)
             elif element.output.token == 'str':
                 if element.value.token_type == 'var':
                     var = search_vars(current_scope, element.value.token)
@@ -766,8 +765,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                             value = str(var.value)
                             return Token(value, 'str')
                         except:
-                            #raise error
-                            pass
+                            raise_error('Type Error: Object of type "' + var.type + '" could not be converted to type "str"', element.line)
                 #arrays need to be formated correctly so they look correct
                 elif element.value.token_type == 'array':
                     value = convert_array_tokens(element.value.token)
@@ -777,8 +775,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                         value = str(element.value.token)
                         return Token(value, 'str')
                     except:
-                        #raise error
-                        pass
+                        raise_error('Type Error: Object of type "' + element.value.token_type + '" could not be converted to type "str"', element.line)
             elif element.output.token == 'array':
                 #check for variables
                 if element.value.token_type == 'var':
@@ -805,8 +802,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     if value.type in {'array', 'str'}:
                         return Token(len(value.value), 'flt')
                     else:
-                        #raise error
-                        pass
+                        raise_error('Type Error: Object of type "' + value.type + '" has no attribute "len"', element.line)
                 else:
                     if element.value.type in {'array', 'str'}:
                         return Token(len(element.value.token), 'flt')
@@ -817,8 +813,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     var = search_vars(current_scope, element.value.token)
                     return var
                 else:
-                    #raise error
-                    pass
+                    raise_error('Type Error: Cannot linke variable to object of type "' + element.value.token_type + '"', element.line)
     def find_not(value):
         '''returns Not the entered value'''
         #check if it is a comparison first
@@ -875,7 +870,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
         comp_op = comp.comp_op.token
         return eval(f'{left} {comp_op} {right}')
     def set_vars(element):
-        value = get_var_value(element.var_type, element.value)
+        value = get_var_value(element.var_type, element.value, element.line)
         #save variable
         current_scope.variables[element.var.token]  = value
         #modify variables in class instances
@@ -903,14 +898,13 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
         if var.type == 'str':
             #use normal python string slicing to slice the value
             string = var.value[int(value.start.token):int(value.stop.token):int(value.step.token)]
-            value = Variable('str', string)
+            new_value = Variable('str', string)
         else:
-            #raise error
-            pass
-        return value
-    def get_class_value(value, get_class=False):
+            raise_error('Type Error: Cannot slice variable of type "' + var.type + '"', value.line)
+        return new_value
+    def get_class_value(value, line, get_class=False):
         if value.instance.type == 'get_class_value':
-            value.instance = get_class_value(value.instance)
+            value.instance = get_class_value(value.instance, line)
         #get class instance if required
         if not isinstance(value.instance, Class_Instance):
             instance = search_vars(current_scope, value.instance.token)
@@ -922,37 +916,31 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             if 'self.' + value.var.token in set(instance.instance_vars.keys()):
                 return instance.instance_vars['self.' + value.var.token]
             else:
-                #raise error
-                pass
+                raise_error('Name Error: Variable of name "' + value.var.token + '" does not exist in instance of class "' + instance.instance_class.name + '"', line)
         else:
-            #raise error
-            pass
-    def get_nested_class(outer_classes, current_class):
+            raise_error('Type Error: Cannot retrieve value from object of type "' + instance.type + '"', line)
+    def get_nested_class(outer_classes, current_class, line):
         for inner_class in outer_classes:
             if current_class.type == 'class':
                 if inner_class.token in set(current_class.functions.keys()):
                     current_class = current_class.functions[inner_class.token]
                 else:
-                    #raise error
-                    pass
+                    raise_error('Name Error: Funton of name "' + inner_class.token + '" is not in current_class.name', line)
             elif isinstance(current_class, Class_Instance):
                 if inner_class.token in set(current_class.instance_vars.keys()):
                     #make sure variable stores a class instance
                     if isinstance(current_class.instance_vars[inner_class.token], Class_Instance):
                         current_class = current_class.instance_vars[inner_class.token]
                     else:
-                        #raise error
-                        pass
+                        raise_error('Type Error: Cannot retrieve value from object of type "' + current_class.instance_vars[inner_class.token].type + '"', line)
                 elif inner_class.token in set(current_class.instance_class.functions.keys()):
                     current_class = current_class.instance_class.functions[inner_class.token]
                 else:
-                    #raise error
-                    pass
+                    raise_error('Name Error: Variable of name "' + inner_class.token + '" does not exist in instance of class "' + current_class.instance_class.name + '"', line)
             else:
-                #raise error
-                pass
+                raise_error('Type Error: Cannot retrieve class value from object of type "' + current_class.type + '"', line)
         return current_class
-    def get_var_value(var_type, value, ignore_type=False):
+    def get_var_value(var_type, value, line, ignore_type=False):
         #get variable value if setting a variable to another variable
         if var_type.token == 'var':
             #check if it is coming from an array
@@ -961,7 +949,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                 value = Variable(result.token_type, result.token)
             else:
                 #make sure variable exists
-                var = search_vars(current_scope, value.token)
+                var = search_vars(current_scope, value.token, line)
                 #can pull proper values straight from other variable
                 value = copy.deepcopy('var')
         #get comparisons 
@@ -984,15 +972,13 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                 #check if types match
                 if result.type == var_type.token or ignore_type:
                     value = result
+                else:
+                    raise_error('Type Error: Cannot assign value of type "' + result.type + '" to variable of type "' + var_type.token, line)
             elif result.token_type == var_type.token:
                 #no longer need the token stuff in variable class
                 value = Variable(var_type.token, result.token)
             else:
-                print(f'[Out_{console_index}]: Type Error: {value.token_type} is not a {var_type.token}')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (value.location - len(value.token)) + '^' * len(value.token))
-                raise Interpreter_Error('')
+                raise_error('Type Error: Cannot assign value of type "' + result.token_type + '" to variable of type "' + var_type.token + '"', line)
         elif value.type == 'custom_func':
             #run function and get value
             result = custom_func(value)
@@ -1000,8 +986,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             if result.token_type == var_type.token or ignore_type:
                 value = Variable(var_type.token, result.token)
             else:
-                #raise error
-                pass
+                raise_error('Type Error: Returned value of type "' + result.token_type + '" cannot be assigned to variable of type "' + var_type.token + '"', line)
         elif value.type == 'make_class_instance':
             #check if there are outer classes
             if len(value.outer_classes) != 0:
@@ -1036,11 +1021,10 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     var = search_vars(current_scope, string.token)
                     if var.type == 'str':
                         strings.append(var.value)
-                    elif var.type == 'flt' or var.type == 'bool':
+                    elif var.type == 'flt' or var.type == 'int' or var.type == 'bool':
                         strings.append(str(var.value))
                     else:
-                        #raise error
-                        pass
+                        raise_error('Type Error: Variable of type "' + var.type +'" can not be concatenated', line)
                 #values are already stored as a string in the token
                 elif string.token_type == 'str' or string.token_type == 'flt' or string.token_type == 'bool':
                     strings.append(string.token)
@@ -1083,13 +1067,14 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                 #values should not be linked
                 value = copy.deepcopy(var)
             else:
-                #raise error
-                pass
+                raise_error('Type Error: Object of type "' + var.type + '" cannot be assigned to Variable of type "' + var_type.token + '"', element.line)
+        elif ignore_type == True:
+            value = Variable(value.token_type, value.token)
         else:
             #no longer need the token stuff in token class
             value = Variable(var_type.token, value.token)
         return value
-    def modify_array(array, indexes, value):
+    def modify_array(array, indexes, value, line):
         #check if there are still indexes
         if len(indexes) != 0:
             #make sure array is array type
@@ -1104,29 +1089,26 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             elif isisntance(array, Class_Instance):
                 return modify_class_value(arrya, indexes, value)
             else:
-                #raise error
-                pass
+                raise_error('Type Error: Object of type "' + array.type +'" is not a valid type to retrieve from', line)
         else:
             return value
-    def modify_class_value(var, indexes, value):
+    def modify_class_value(var, indexes, value, line):
         #check if there are still indexes
         if len(indexes) != 0:
             #check if need to modify array instead
-            if indexes[0].token_type == 'flt':
+            if indexes[0].token_type == 'int':
                 if var.type == 'array':
                     return modify_array(var, indexes, value)
                 else:
-                    pass
+                    raise_error('Type Error: Object to retrieve from must be of type "array" not "' + var.type + '"', line)
             elif isinstance(var, Class_Instance):
                 if 'self.' + indexes[0].token in set(var.instance_vars.keys()):
                     var = modify_class_value(var.instance_vars['self.' + indexes[0].token], indexes[1:], value)
                     return var
                 else:
-                    #raise error
-                    pass
+                    raise_error('Name Error: No variable of name "' + indexes[0].token +'" in class "' + var.instance_class.name +'"', line)
             else:
-                #raise error
-                pass
+                raise_error('Type Error: Object of type "' + var.type + '" is not a valid type to retrieve from', line)
         else:
             return value
     #change exisitng variable's value
@@ -1152,12 +1134,10 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                             else:
                                 instance.instance_vars['self.' + element.indexes[0].token] = modify_class_value(instance.instance_vars['self.'+element.indexes[0].token], element.indexes[1:], value)
                         else:
-                            #raise error
-                            pass
+                            raise_error('Name Error: No variable of name "' + element.indexes[0].token +'" in class "' + instance.instance_class.name + '"', element.line)
                     else:
-                        #raise error
-                        pass
-                elif element.indexes[0].token_type == 'flt':
+                        raise_error('Type Error: Cannot modify instance variable of object of type "' + instance.type + '"', element.line)
+                elif element.indexes[0].token_type == 'int':
                     #convert variable to token if required; can't store variable object in array
                     if isinstance(value, Variable):
                         value = Token(value.value, value.type)
@@ -1166,21 +1146,19 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     array.value[int(element.indexes[0].token)] = modify_array(array.value[int(element.indexes[0].token)], element.indexes[1:], value)
             else:
                 #get the new value
-                value = get_var_value(Token(var.type, 'type'), element.value)
+                value = get_var_value(Token(var.type, 'type'), element.value, ignore_type=True)
                 #make sure types match
                 if value.type == var.type:
                     current_scope.variables[element.var.token].value = value.value
                 else:
-                    #raise error
-                    pass
+                    raise_error('Type Error: Cannot change variable of type "' + var.type + '" to "' + value.type + '"', element.line)
         else:
-            #raise error 
-            pass
+           raise_error('Type Error: Cannot change value for object of type "' + var.type + '"', element.line)
     def free_var(element):
         '''Free a variable from memory'''
         nonlocal variables 
         #delete variable if it exists, otherwise raise an error
-        var = search_vars(current_scope, element.var.token)
+        var = search_vars(current_scope, element.var.token, element.line)
         del current_scope.variables[element.var.token]
     #print to screen
     def output_display(element):
@@ -1227,19 +1205,17 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             #retrive and run the function
             value = run_class_func_init(instance.instance_class.functions[element.name.token], element, instance.instance_vars, instance.instance_class.functions)
         else:
-            #raise error
-            pass
-        #for functions thta return a value
+            raise_error('Name Error: Class "' + instance.instance_class.name +'" has no function named "' + element.name.token + '"', element.line)
+        #for functions that return a value
         return value
     def custom_func(element):
         func = search_vars(current_scope, element.name.token)
         #make sure func is a function
         if func.type == 'function':
             #return for returns from the fucntions
-            return run_custom_func(func, element)
+            return run_custom_func(func, element, input_string=func.input_string, path=func.path)
         else:
-            #raise error
-            pass
+            raise_error('Type Error: Expected object of type "function" not "' + func.type +'"', element.line)
     def run_class_func_init(func, element, instance_vars, instance_funcs):
         nonlocal current_scope
         #allow modification to instance vars
@@ -1247,12 +1223,12 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
         #both functions and variables need to be added to the function scope
         vars_to_add = instance_vars | instance_funcs
         #run function running function
-        return run_custom_func(func, element, vars_to_add=vars_to_add)
+        return run_custom_func(func, element, vars_to_add=vars_to_add, input_string=instance.instance_class.input_string, path=instance.instance_class.path)
     #seperate function to run custom functions to make classes easier
-    def run_custom_func(func, element, vars_to_add={}):
+    def run_custom_func(func, element, vars_to_add={}, input_string=input_string, path=path):
         nonlocal current_scope
         #create new scope and change scope
-        new_scope = Node(current_scope)
+        new_scope = Node(current_scope, input_string=input_string, path=path)
         current_scope = new_scope
         #add return type to current scope
         current_scope.return_type = func.return_type
@@ -1274,13 +1250,13 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                         if var.type == arg['type'].token:
                             current_scope.variables[arg['name'].token] = Variable(arg['type'].token, var.value)
                         else:
-                            raise_error('Type Error: Variable should be of type "' + arg['type'].token + '" not "' + var.type + '"', input_string, element.line, path)
+                            raise_error('Type Error: Variable should be of type "' + arg['type'].token + '" not "' + var.type + '"', element.line)
                     else:
-                        raise_error('Type Error: Value should be of type "' + arg['type'].token +'" not "' + element.args[num].token_type +'"', input_string, element.line, path)
+                        raise_error('Type Error: Value should be of type "' + arg['type'].token +'" not "' + element.args[num].token_type +'"', element.line)
         elif len(element.args) > len(func.args):
-            raise_error('Type Error: Provided ' + str(len(element.args)) + ' arguments but function "' + func.name.token + '" requires ' + str(len(func.args)), input_string, element.line, path)
+            raise_error('Type Error: Provided ' + str(len(element.args)) + ' arguments but function "' + func.name.token + '" requires ' + str(len(func.args)), element.line)
         elif len(element.args) < len(func.args):
-            raise_error('Type Error: Function "' + func.name.token + '" requires ' + str(len(func.args)) + ' arguments but only ' + str(len(element.args)) + ' were provided', input_string, element.line, path)
+            raise_error('Type Error: Function "' + func.name.token + '" requires ' + str(len(func.args)) + ' arguments but only ' + str(len(element.args)) + ' were provided', element.line)
         #add any additonal variables (for instance variables)
         current_scope.variables = current_scope.variables | vars_to_add
         #run function code
@@ -1404,11 +1380,11 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     if variable.type == 'array':
                         array = variable.value
                     else:
-                        raise_error('Type Error: Variable should be of type "array", not "' + variable.type + '"', input_string, element.line, path)
+                        raise_error('Type Error: Variable should be of type "array", not "' + variable.type + '"', element.line)
                 elif element.values.token_type == 'array':
                     array = element.values.token
                 else:
-                    raise_error('Type Error: Value should be of type "array", not "' + element.values.token_type + '"', input_string, element.line, path)
+                    raise_error('Type Error: Value should be of type "array", not "' + element.values.token_type + '"', element.line)
                 #initalise var saving stuff
                 type_token = Token('array', 'type')
                 value_token = Token('0', 'str')
@@ -1464,7 +1440,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                 #return the value
                 return value
             else:
-                raise_error('Type Error: Return should be of type "' + current_scope.return_type.token + '" not "' + value.token_type + '"', input_string, element.line, path)
+                raise_error('Type Error: Return should be of type "' + current_scope.return_type.token + '" not "' + value.token_type + '"', element.line)
         elif element.type == 'change_var_value':
             change_var_value(element)
         #save class as variable
@@ -1485,7 +1461,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     #add parent functions to class list of functions. The child function with have priority for duplicate function
                     element.functions = parent_funcs | element.functions
                 else:
-                    raise_error('Type Error: Object of type "' + parent.type + '" cannot be parent of a class', input_string, element.line, path)
+                    raise_error('Type Error: Object of type "' + parent.type + '" cannot be parent of a class', element.line)
             current_scope.variables[element.name.token] = element
         #open file and store it as a string
         elif element.type == 'open_file':
@@ -1494,9 +1470,9 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                 with open(element.path.token, 'r') as f:
                     file = f.read()
             except FileNotFoundError:
-                raise_error('File Not Found Error: File "' + element.path.token + '" could not be found', input_string, element.line, path)
+                raise_error('File Not Found Error: File "' + element.path.token + '" could not be found', element.line)
             except Exception as e:
-                raise_error('File IO Error: File "' + element.path.token + '" could not be read', input_string, element.line, path)
+                raise_error('File IO Error: File "' + element.path.token + '" could not be read', element.line)
             #save file as var
             current_scope.variables[element.var.token] = Variable('str', file)
         #save variable to document
@@ -1511,7 +1487,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             elif var.type == 'array':
                 value = convert_array_tokens(var.value)
             else:
-                raise_error(f'Type Error: Type "{var.type}"" cannot be saved to file', input_string, element.line, path)
+                raise_error(f'Type Error: Type "{var.type}"" cannot be saved to file', element.line)
             #open and save to file
             with open(element.path.token, 'w') as file:
                 file.write(value)

@@ -1,0 +1,34 @@
+#simple try except block
+try
+{
+    make flt a = 'Hello'
+}
+except
+{
+    display 'There was an error'
+}
+    
+#can save exception to variable
+try
+{
+    make flt a = 'World'
+}
+#errorVar is stored as a string
+except -> errorVar
+{
+    display errorVar
+}
+    
+#can have finally block that will run code regardless of if an exception occured
+try
+{
+    make flt a = '!'
+}
+except
+{
+    display 'There was an error'
+}
+finally
+{
+    display 'This code ran regardless of any error'
+}

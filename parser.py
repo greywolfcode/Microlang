@@ -46,11 +46,13 @@ class Else_statement():
         self.line = line
         self.type = 'else'
 class Function():
-    def __init__(self, name, args, statement, return_type, line):
+    def __init__(self, name, args, statement, return_type, line, input_string, path):
         self.name = name
         self.args = args
         self.statement = statement
         self.return_type = return_type
+        self.input_string = input_string
+        self.path = path
         self.line = line
         self.type = 'function'
 class Global():
@@ -64,10 +66,12 @@ class Nonlocal():
         self.line = line
         self.type = 'nonlocal'
 class Class():
-    def __init__(self, name, parent, objects, line):
+    def __init__(self, name, parent, objects, line, input_string, path):
         self.name = name
         self.parent = parent
         self.functions = objects
+        self.input_string = input_string
+        self.path = path
         self.line = line
         self.type = 'class'
 class Get_Class_Value():
@@ -215,6 +219,13 @@ class Get_Array_Value():
         self.index = index
         self.line = line
         self.type = 'get_array_value'
+class Try_Except_Finally():
+    def __init__(self, try_statements, except_statements, finally_statements, line):
+        self.try_statements = try_statements
+        self.except_statemens = except_statements
+        self.finally_statements = finally_statements
+        self.line = line
+        self.type = 'try_except_finally'
 #function to raise error
 def raise_error(message, input_string, token, file):
     #print error message
@@ -967,6 +978,7 @@ def file_parser(tokens, console_index, input_string, path):
         '''Creates Display Objects'''
         nonlocal current_index
         nonlocal line
+        current_error_line = error_line()
         if accept_type('var'):
             value = tokens[line][current_index]
         elif accept_type('flt') or accept_type('int'):
@@ -992,11 +1004,7 @@ def file_parser(tokens, console_index, input_string, path):
         elif accept_token('['):
             value = create_changer()
         else:
-            print(f'[Out_{console_index}]: Syntax Error: {tokens[line][current_index].token} is not able to be displayed')
-            out_length = len(f'[Out_{console_index}]: ')
-            print(' ' * out_length + input_string)
-            print(' ' * out_length + ' ' * (tokens[line][current_index].location - len(tokens[line][current_index].token)) + '^' * len(tokens[line][current_index].token))
-            raise Parser_Error('')
+            raise_error('Syntax Error: Object "' + {tokens[line][current_index].token} + '" is not able to be displayed', input_string, current_error_line, path)
         return value
     def create_make():
         '''Makes Make Statement Objects'''
@@ -1206,6 +1214,7 @@ def file_parser(tokens, console_index, input_string, path):
     def create_array():
         '''Creates Arrays'''
         nonlocal current_index
+        current_error_line = error_line()
         array = []
         while True:
             if accept_type('var'):
@@ -1220,11 +1229,7 @@ def file_parser(tokens, console_index, input_string, path):
                 array.append(create_array())
                 current_index -= 1
             else:
-                print(f'[Out_{console_index}]: Type Error: {tokens[current_index].token} is not a valid type ({tokens[current_index].token_type}) for array')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (tokens[current_index].location - len(tokens[current_index].token)) + '^' * len(tokens[current_index].token))
-                raise Parser_Error('')
+                raise_error('Type Error: Type "' + tokens[current_index].token + '" is not a valid type to put in "' + tokens[current_index].token_type + '" for array', input_string, current_error_line, path)
             #increase current index
             current_index += 1
             #getout clause
@@ -1250,11 +1255,7 @@ def file_parser(tokens, console_index, input_string, path):
         elif accept_token('link'):
             output = tokens[line][current_index - 1]
         else:
-            print(f'[Out_{console_index}]: Type Error: {tokens[line][current_index].token} is not a valid type to be converted')
-            out_length = len(f'[Out_{console_index}]: ')
-            print(' ' * out_length + input_string)
-            print(' ' * out_length + ' ' * (tokens[line][current_index].location - len(tokens[current_index].token)) + '^' * len(tokens[line][current_index].token))
-            raise Parser_Error('')
+            raise_error('Type Error: Type "' + tokens[line][current_index].token + '" is not a valid type to be converted', input_string, current_error_line, path)
         #check for [
         expect('[', console_index)
         #get what output should be
@@ -1274,11 +1275,7 @@ def file_parser(tokens, console_index, input_string, path):
             output = expect_type('type', console_index)
             #make sure output is not var type - can't convert to variable type 
             if output.token == 'var':
-                print(f'[Out_{console_index}]: Type Error: {tokens[line][current_index].token} is not a valid type to be converted to')
-                out_length = len(f'[Out_{console_index}]: ')
-                print(' ' * out_length + input_string)
-                print(' ' * out_length + ' ' * (tokens[line][current_index].location - len(tokens[line][current_index].token)) + '^' * len(tokens[line][current_index].token))
-                raise Parser_Error('')
+                raise_error('Type Error: Type "' + tokens[line][current_index].token + '" is not a valid type to be converted to', input_string, current_error_line, path)
         expect(']', console_index)
         return Run_Func(value, output, current_error_line)
     def create_free():
@@ -1543,7 +1540,7 @@ def file_parser(tokens, console_index, input_string, path):
                     st.append(get_element())
                 #update current_block
                 current_block.pop()
-                return Function(name, args, st, return_type, current_error_line)
+                return Function(name, args, st, return_type, current_error_line, input_string, path)
             #create class
             elif accept_token('class'):
                 name, parents = create_class()
@@ -1573,7 +1570,7 @@ def file_parser(tokens, console_index, input_string, path):
                     #check for closing }
                     if accept_token('}'):
                         break
-                return Class(name, parents, objects, current_error_line)
+                return Class(name, parents, objects, current_error_line, input_string, path)
             #return statements
             elif accept_token('return'):
                 #make sure currently inside a function block
@@ -1681,6 +1678,8 @@ def file_parser(tokens, console_index, input_string, path):
                 except Exception:
                     raise_error('File IO Error: File "' + file_path.token + '" could not be read', input_string, tokens[line][current_index -1], path)
                 file_name = file_path.token
+                #split file on lines
+                file = file.splitlines()
                 #run inported file through lexer
                 file_tokens = lexer.file_lexer(file, console_index, file_path.token)
                 #parse the inporter file
@@ -1700,7 +1699,7 @@ def file_parser(tokens, console_index, input_string, path):
                 else:
                     name = Token(file_name, 'var')
                 #file is stored as a class object with path as name (so it cannot be made an instance of)
-                file_class = Class(file_path, None, objects)
+                file_class = Class(file_path, None, objects, 0, file, file_path.token + '.microlang')
                 #add to syntax tree. This prevents having to return two objects
                 syntax_tree.append(file_class)
                 #Add command to make an instance of the class

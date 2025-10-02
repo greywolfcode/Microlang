@@ -2,9 +2,8 @@
 #fix all remaining bugs :)
 #replace/remove interactive console code?
 
-#fill in all missing areas requireing a raise error
 #add try/except/finally block
-#store input string and path in classes and functions so imports will work with error messages
+#add all missing positional arguments of error lines
 
 #import standerd libraries
 import traceback

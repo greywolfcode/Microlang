@@ -151,7 +151,7 @@ def file_lexer(input_string, console_index, path):
                 block_comment = False
             else:
                 return True
-        keywords = {'make', 'if', 'elif', 'else', 'then', 'not', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'save', 'as', 'import', 'link'}
+        keywords = {'make', 'if', 'elif', 'else', 'then', 'not', 'display', 'type', 'len', 'free', 'input', 'while', 'for', 'in', 'do', 'return', 'func', '->', 'class', 'new', 'break', 'global', 'nonlocal', 'open', 'save', 'as', 'import', 'link', 'try', 'except', 'finally'}
         compare_keywords = {'or', 'and'}
         types = {'flt', 'int', 'str', 'array', 'var', 'bool', 'void', 'instance'}
         booleans = {'True', 'False'}
