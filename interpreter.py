@@ -7,6 +7,11 @@ class Interpreter_Error(Exception):
     def __init__(self, message):
         self.message = message
         super().__init__(self.message)
+#error to use for try/except blocks
+class Error_To_Catch(Exception):
+    def __init__(self, message):
+        self.message = message
+        super().__init__(self.message)
 #define variables
 variables = {}
 def clear_vars():
@@ -49,10 +54,11 @@ class Variable():
         self.value = value
 class Make_Statement():
     '''Class to store data to make variables'''
-    def __init__ (self, var_type, var, value):
+    def __init__ (self, var_type, var, value, line):
         self.var_type = var_type
         self.var = var
         self.value = value
+        self.line = line
         self.type = 'make'
 class Class_Instance():
     '''Class to store class instances'''
@@ -648,6 +654,8 @@ def interpreter(syntax_tree, console_index, input_string):
 
 #interpreter function for files
 def file_interpreter(syntax_tree, console_index, input_string, path):
+    #list to cache try except blocks
+    try_cache = []
     #define class structure for variable scope tree
     class Node():
         def __init__(self, parent, input_string=input_string, path=path):
@@ -658,8 +666,15 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             #store parent scope
             self.parent = parent
     def raise_error(message, line):
+        #get values requried for error message
         file = current_scope.path 
         input_string = current_scope.input_string
+        #check if in a try block
+        if len(try_cache) != 0:
+            #set error value in try cache to equal the error message
+            error_value = 'File "' + file + '", Line ' + str(line + 1) + ':' + '\n' + message + '\n' + input_string[line] + '\n' + '^' * len(input_string[line])
+            #raise error to be cuaght by try/except
+            raise Error_To_Catch(error_value)
         print('File "' + file + '", Line ' + str(line + 1) +':')
         print(message)
         print(input_string[line])
@@ -708,8 +723,14 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                 #evaluate expression if operator is found and add to stack
                 num_1 = output_stack.pop().token
                 num_2 = output_stack.pop().token
-                new_value = eval(f'{num_2} {token.token} {num_1}')
-                output_stack.append(Token(new_value, 'flt'))
+                #check for division by zero
+                if num_1 == 0 and token.token == '/':
+                    raise_error('Math Error: Division by zero', line)
+                elif num_1 == 0 and token.token == '%':
+                    raise_error('Math Error: Modulo by zero', line)
+                else:
+                    new_value = eval(f'{num_2} {token.token} {num_1}')
+                    output_stack.append(Token(new_value, 'flt'))
         #return final value
         return output_stack[0]
     def run_func(element):
@@ -1061,13 +1082,13 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             value = Variable(var_type.token, get_input(value.string))
         elif value.token_type == 'var':
             #get var
-            var = search_vars(current_scope, value.token)
+            var = search_vars(current_scope, value.token, line)
             #make sure types match
             if var_type.token == var.type:
                 #values should not be linked
                 value = copy.deepcopy(var)
             else:
-                raise_error('Type Error: Object of type "' + var.type + '" cannot be assigned to Variable of type "' + var_type.token + '"', element.line)
+                raise_error('Type Error: Object of type "' + var.type + '" cannot be assigned to Variable of type "' + var_type.token + '"', line)
         elif ignore_type == True:
             value = Variable(value.token_type, value.token)
         else:
@@ -1173,7 +1194,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             value = interpret_equation(statement.value)
         elif statement.token_type == 'var':
             #make sure variable exists
-            var = search_vars(current_scope, statement.token)
+            var = search_vars(current_scope, statement.token, element.line)
             #make arrays look good
             if var.type == 'array':
                 print_array = convert_array_tokens(var.value)
@@ -1491,6 +1512,31 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             #open and save to file
             with open(element.path.token, 'w') as file:
                 file.write(value)
+        #try/except_finally blocks
+        elif element.type == 'try_except_finally':
+            #add value to try cache
+            try_cache.append(element)
+            #piggyback on Python's try/except/finally
+            try:
+                #run all statements
+                for statement in element.try_statements:
+                    run_command(statement)
+            except Error_To_Catch as e:
+                try_cache.pop()
+                #set error value to variable if required
+                if element.except_var != None:
+                    var = Make_Statement(Token('str', 'type'), Token(element.except_var.token, 'var'), Token(e, 'str'), element.line)
+                    set_vars(var)
+                for statement in element.except_statements:
+                    run_command(statement)
+            else:
+                #remove from try cache if it wasn't by except
+                try_cache.pop()
+            finally:
+                #run finally statements
+                for statement in element.finally_statements:
+                    run_command(statement)
+            #remove self from try cache
     #loop through all sections of tree
     for tree in syntax_tree:
         run_command(tree)

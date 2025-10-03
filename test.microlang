@@ -1,11 +1,5 @@
-class a [ ]
+while ( True == True ) do 
 {
-    def __init__ [ ] -> void
-    {
-        make int self.b = 8
-    }
+    display True
+    break
 }
-
-make instance c = a [ ]
-
-c . g = 9

@@ -2,7 +2,6 @@
 #fix all remaining bugs :)
 #replace/remove interactive console code?
 
-#add try/except/finally block
 #add all missing positional arguments of error lines
 
 #import standerd libraries

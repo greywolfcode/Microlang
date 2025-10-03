@@ -220,9 +220,10 @@ class Get_Array_Value():
         self.line = line
         self.type = 'get_array_value'
 class Try_Except_Finally():
-    def __init__(self, try_statements, except_statements, finally_statements, line):
+    def __init__(self, try_statements, except_statements, except_var, finally_statements, line):
         self.try_statements = try_statements
-        self.except_statemens = except_statements
+        self.except_statements = except_statements
+        self.except_var = except_var
         self.finally_statements = finally_statements
         self.line = line
         self.type = 'try_except_finally'
@@ -1666,6 +1667,48 @@ def file_parser(tokens, console_index, input_string, path):
                 expect('in', console_index)
                 file_path = expect_type('path', console_index)
                 return Save_File(var, file_path, current_error_line)
+            #try/except/finally
+            elif accept_token('try'):
+                change_line_end()
+                expect('{', console_index)
+                change_line_end()
+                #get statements in try block
+                try_statements = []
+                while not accept_token('}'):
+                    try_statements.append(get_element())
+                change_line_end()
+                #except is the only stage thet can cause error in interpreter
+                current_error_line = error_line()
+                #check for except
+                expect('except', console_index)
+                #check if setting except to equal a value
+                except_var = None
+                if not check_line_end():
+                    if not accept_token('{'):
+                        expect('->', console_index)
+                        except_var = expect_type('var', console_index)
+                        change_line_end()
+                        expect('{', console_index)
+                else:
+                    change_line_end()
+                    expect('{', console_index)
+                change_line_end()
+                #get statements in except block
+                except_statements = []
+                while not accept_token('}'):
+                    except_statements.append(get_element())
+                change_line_end()
+                #check for finally block
+                finally_statements = []
+                if accept_token('finally'):
+                    change_line_end()
+                    expect('{', console_index)
+                    change_line_end()
+                    while not accept_token('}'):
+                        finally_statements.append(get_element())
+                else:
+                    current_index -= 1
+                return Try_Except_Finally(try_statements, except_statements, except_var, finally_statements, current_error_line)
             #importing other files
             elif accept_token('import'):
                 #load file
@@ -1746,9 +1789,7 @@ def file_parser(tokens, console_index, input_string, path):
         nonlocal current_index
         #figure out what next token type is
         if accept_type('keyword'):
-            st = statement()
-            if st != None:
-                element = st
+            element = statement()
         #check for variable name to run functions
         elif accept_type('var'):
             #increase index to check for equals
