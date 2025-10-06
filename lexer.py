@@ -211,7 +211,7 @@ def file_lexer(input_string, console_index, path):
                 tokens[-1].append(Token(token, 'var', index-len(current_token), line))
             #check if it is a special variable name
             elif current_token in special_vars:
-                tokens[-1].append(Token(token, 'special_var', index - len(current_token), 0))
+                tokens[-1].append(Token(token, 'special_var', index - len(current_token), line))
             #check if it is a assignment equals; length check makes = assignment but == a compare
             elif assign_reg.search(token) and len(token) == 1:
                 tokens[-1].append(Token(token, 'assign', index - len(current_token), line))

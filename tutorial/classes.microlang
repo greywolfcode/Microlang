@@ -2,10 +2,10 @@
 class basicClass [ ]
 {
     #init function runs at initalisation
-    func __init__ [ flt arg1 , flt arg2 ] -> void
+    func __init__ [ int arg1 , flt arg2 ] -> void
     {
         #create instance variables
-        make flt self.arg1 = arg1
+        make int self.arg1 = arg1
         make flt self.arg2 = arg2
     }
     #other functions. Any function (even nested) inside a class can modify instance variables
@@ -16,33 +16,33 @@ class basicClass [ ]
     }
 }
 #make class instance
-make instance classInstance = new basicClass [ 7 , 8 ]
+make instance classInstance = new basicClass [ 7 , 8.0 ]
 #run instance function
-make flt x = classInstance . addValues [ 5 ]
+make flt x = classInstance . addValues [ 5.0 ]
 
 #inheritance. Can only inherit one object
 class childClass [ basicClass ]
 {
     #init function
-    func __init__ [ flt arg3 , flt arg4 ] -> void
+    func __init__ [ flt arg3 , int arg4 ] -> void
     {
         #initalise parent
         parent.__init__ [ 4 , arg3 ]
         make flt self.arg3 = arg3
-        make flt self.arg4 = arg4
+        make int self.arg4 = arg4
     }
     #other function
-    func subtractValues [ flt value ] -> flt
+    func subtractValues [ int value ] -> int
     {
-        make flt c = self.arg3 - self.arg4 - value
+        make int c = self.arg3 - self.arg4 - value
         return c
     }
 }
 #make class instance
-make instance classInstanceWithInheritance = new childClass [ 7 , 9 ]
+make instance classInstanceWithInheritance = new childClass [ 7.0 , 9 ]
 #run functions from child class and parent class
 make flt y = classInstanceWithInheritance . subtractValues [ 9 ]
-make flt z = classInstanceWithInheritance . addValues [ 9 ]
+make flt z = classInstanceWithInheritance . addValues [ 9.0 ]
 
 #retrieve value from class
 make flt w = classInstanceWithInheritance . arg3

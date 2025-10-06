@@ -1021,7 +1021,7 @@ def file_parser(tokens, console_index, input_string, path):
         start = expect_type('int', console_index)
         #check for string slicing (:) or array value ( ) )
         if accept_token(')'):
-            value = Get_Array_Value(var, start)
+            value = Get_Array_Value(var, start, current_error_line)
         else:
             expect(':', console_index)
             stop = expect_type('int', console_index)
@@ -1567,6 +1567,8 @@ def file_parser(tokens, console_index, input_string, path):
                         new_class = statement()
                         #will overwrite previously defined class
                         objects[new_class.name.token] = new_class
+                    else:
+                        raise_error('Syntax Error: Expected "func" or "class"', input_string, tokens[line][current_index], path)
                     change_line_end()
                     #check for closing }
                     if accept_token('}'):
@@ -1839,10 +1841,13 @@ def file_parser(tokens, console_index, input_string, path):
             #initalising parent of class
             if accept_token('parent.__init__'):
                 current_index -= 1
-                current_error_line = tokens[line][current_index].line
+                current_error_line = error_line()
                 name = expect_type('special_var', console_index)
                 args = get_func_args(False)
                 element = Custom_Func(name, args, current_error_line)
+        else:
+            #token is not valid, so raise error
+            raise_error('Syntax Error: Token "' + tokens[line][current_index] + '" is not a valid token', input_string, tokens[line][current_index], path)
         #move to next line if at end of current line
         change_line_end()
         return element
