@@ -1115,7 +1115,6 @@ def file_parser(tokens, console_index, input_string, path):
                             expect('(', console_index)
                     used = True
                 else:
-                    #decrease current index so next options work properly
                     current_index -= 1
             else:
                 current_index -= 1
@@ -1200,7 +1199,7 @@ def file_parser(tokens, console_index, input_string, path):
                         break
                     else:
                         expect('+', console_index)
-                value = String_Concat(strings, current_Error_line)
+                value = String_Concat(strings, current_error_line)
             else:
                 current_index -= 1
                 value = expect_type('str', console_index)
@@ -1591,7 +1590,6 @@ def file_parser(tokens, console_index, input_string, path):
                     raise_error('Syntax Error: Keyword "break" cannot be used outside of a while or for loop block', input_string, tokens[line][current_index - 1], path)
             #global/nonlocal for functions
             elif accept_token('global'):
-                line = error_line()
                 #make sure inside a function
                 if 'func' in current_block:
                     var = expect_type('var', console_index)
@@ -1607,7 +1605,6 @@ def file_parser(tokens, console_index, input_string, path):
                     raise_error('Syntax Error: Keyword "nonlocal" cannot be used outside a function block', input_string, tokens[line][current_index - 1], path)
             #create while loop
             elif accept_token('while'):
-                line = error_line()
                 #get comparison and setup tokens
                 expect('(', console_index)
                 comp = comparison()
@@ -1748,8 +1745,8 @@ def file_parser(tokens, console_index, input_string, path):
                 #add to syntax tree. This prevents having to return two objects
                 syntax_tree.append(file_class)
                 #Add command to make an instance of the class
-                instance = Make_Class_Instance(file_path, [], [])
-                make_command = Make_statement(Token('instance', 'type'), name, instance)
+                instance = Make_Class_Instance(file_path, [], [], current_error_line)
+                make_command = Make_statement(Token('instance', 'type'), name, instance, current_error_line)
                 return make_command
     def change_line_end():
         '''Changes line if at the end of the line'''
@@ -1815,7 +1812,7 @@ def file_parser(tokens, console_index, input_string, path):
                     #loop until no more indexes are found
                     while True:
                         if next_type == 'bracket':
-                            index = expect_type('flt', console_index)
+                            index = expect_type('int', console_index)
                             indexes.append(index)
                             expect(')', console_index)
                         elif next_type == 'class_value':
@@ -1847,7 +1844,7 @@ def file_parser(tokens, console_index, input_string, path):
                 element = Custom_Func(name, args, current_error_line)
         else:
             #token is not valid, so raise error
-            raise_error('Syntax Error: Token "' + tokens[line][current_index] + '" is not a valid token', input_string, tokens[line][current_index], path)
+            raise_error('Syntax Error: Token "' + tokens[line][current_index].token + '" is not a valid token', input_string, tokens[line][current_index], path)
         #move to next line if at end of current line
         change_line_end()
         return element

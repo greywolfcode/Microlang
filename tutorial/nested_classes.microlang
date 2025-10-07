@@ -6,7 +6,7 @@ class outer [ ]
     {
         func __init__ [ ] -> void
         {
-            make flt self.value = 9
+            make flt self.value = 9.0
         }
         func returnValue [ ] -> str
         {

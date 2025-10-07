@@ -1,17 +1,17 @@
 #assign variable
-make flt x  = 0
+make int x = 0
 #while loop
 while ( x <= 8 ) do
 {
     display x
-    make flt x = x + 1
+    x = 1 + x
 }
 
 #Use break to exit loop early
-make flt x = 0
+make int x = 0
 while ( x < 20 ) do
 {
-    make flt x = x + 1
+    x = 1 + x
     display x
     #break if x equals 10
     if ( x == 10 ) then

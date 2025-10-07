@@ -19,7 +19,7 @@ make var g = f
 free f
 
 #change variable name after initalisation -must change to same type
-a = 78
+a = 78.5
 
 #make a variable linked to the same memory space
 make flt h = link [ a ]

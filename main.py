@@ -1,8 +1,5 @@
 #TODO:
-#fix all remaining bugs :)
 #replace/remove interactive console code?
-
-#add all missing positional arguments of error lines
 
 #import standerd libraries
 import traceback
@@ -11,7 +8,7 @@ import lexer
 import parser
 import interpreter
 #startup prints
-print('Welcome to the Micro Console')
+print('Welcome to the Micro Console (formerly Minicon)')
 print('"We are not just a fancy calculator ™"')
 print()
 print('type "help" to get help')
@@ -166,7 +163,9 @@ def main():
                 #prints help menu
                 case 'help':
                     print(f'[Out_{index}]:')
-                    print('Note: this syntex is deprecated and is only used for the console')
+                    print('Note: this syntax is deprecated and is only used for the console')
+                    print()
+                    print('Also Note that the console code has been broken. It most likely will Not work.')
                     print()
                     print('Put spaces between all tokens except inside of strings')
                     print()

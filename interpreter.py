@@ -809,7 +809,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             #get type of variable
             if element.output.token == 'type':
                 if element.value.token_type == 'var':
-                    var = search_vars(current_scope, element.value.token)
+                    var = search_vars(current_scope, element.value.token, element.line)
                     value = var.type
                     return Token(value, 'str')
                 else:
@@ -831,7 +831,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             elif element.output.token == 'link':
                 if element.value.token_type == 'var':
                     #get variable
-                    var = search_vars(current_scope, element.value.token)
+                    var = search_vars(current_scope, element.value.token, element.line)
                     return var
                 else:
                     raise_error('Type Error: Cannot linke variable to object of type "' + element.value.token_type + '"', element.line)
@@ -907,14 +907,14 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             #get variable
             var = search_vars(current_scope, var.token, line)
             return var.value[int(index.token)]
-    def slice_string(value):
+    def slice_string(value, line):
         #check if slicing is attached to an array
         if value.var.type == 'get_array_value':
             var = get_array_value(value.var.var, value.var.index)
             #make var into variable object for processing below
             var = Variable(var.token_type, var.token)
         else:
-            var = search_vars(current_scope, value.var.token)
+            var = search_vars(current_scope, value.var.token, line)
         #make sure value is a string
         if var.type == 'str':
             #use normal python string slicing to slice the value
@@ -1011,11 +1011,11 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
         elif value.type == 'make_class_instance':
             #check if there are outer classes
             if len(value.outer_classes) != 0:
-                current_class = search_vars(current_scope, value.outer_classes[0].token)
+                current_class = search_vars(current_scope, value.outer_classes[0].token, line)
                 #starting at first inner class
-                final_class = get_nested_class(value.outer_classes[1:], current_class)
+                final_class = get_nested_class(value.outer_classes[1:], current_class, line)
                 #get instance from current_class
-                instance_class = get_nested_class([value.name], final_class)
+                instance_class = get_nested_class([value.name], final_class, line)
             else:
                 instance_class = search_vars(current_scope, value.name.token, line)
             instance = Class_Instance(instance_class, {})
@@ -1032,14 +1032,14 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
             #remove refrence to instance variables in current_scope
             del current_scope.class_vars
         elif value.type == 'string_slice':
-            value = slice_string(value)
+            value = slice_string(value, line)
         elif value.type == 'string_concat':
             #loop through all strings
             strings = []
             for string in value.strings:
                 if string.token_type == 'var':
                     #make sure var is the right type
-                    var = search_vars(current_scope, string.token)
+                    var = search_vars(current_scope, string.token, line)
                     if var.type == 'str':
                         strings.append(var.value)
                     elif var.type == 'flt' or var.type == 'int' or var.type == 'bool':
@@ -1104,7 +1104,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                 return array
             #catch if array is a token
             elif array.token_type == 'array':
-                array.token[int(indexes[0].token)] =  modify_array(array.token[int(indexes[0].token)], indexes[1:], value)
+                array.token[int(indexes[0].token)] =  modify_array(array.token[int(indexes[0].token)], indexes[1:], value, line)
                 return array
             #check if modifying class
             elif isisntance(array, Class_Instance):
@@ -1162,12 +1162,12 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     #convert variable to token if required; can't store variable object in array
                     if isinstance(value, Variable):
                         value = Token(value.value, value.type)
-                    array = search_vars(current_scope, element.var.token)
+                    array = search_vars(current_scope, element.var.token, element.line)
                     #call function to modify array
-                    array.value[int(element.indexes[0].token)] = modify_array(array.value[int(element.indexes[0].token)], element.indexes[1:], value)
+                    array.value[int(element.indexes[0].token)] = modify_array(array.value[int(element.indexes[0].token)], element.indexes[1:], value, element.line)
             else:
                 #get the new value
-                value = get_var_value(Token(var.type, 'type'), element.value, ignore_type=True)
+                value = get_var_value(Token(var.type, 'type'), element.value, element.line, ignore_type=True)
                 #make sure types match
                 if value.type == var.type:
                     current_scope.variables[element.var.token].value = value.value
@@ -1214,7 +1214,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
     def run_class_func(element):
         #check if using nested class
         if element.instance.type == 'get_class_value':
-            instance = get_class_value(element.instance, get_class=True)
+            instance = get_class_value(element.instance, element.line, get_class=True)
             #get actual instance using name
         else:
             #retrive class instance
@@ -1439,11 +1439,11 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
                     break
                 else:
                     scope = scope.parent
-            var = search_vars(scope, element.var.token, all_scopes=False, give_value=False)
+            var = search_vars(scope, element.var.token, element.line, all_scopes=False, give_value=False)
             current_scope.variables[element.var.token] = var
         #get nonlocal variable (from one scope up)
         elif element.type == 'nonlocal':
-            var = search_vars(current_scope.parent, element.var.token, all_scopes=False, give_value=False)
+            var = search_vars(current_scope.parent, element.var.token, element.line, all_scopes=False, give_value=False)
             current_scope.variables[element.var.token] = var
         #run custom function
         elif element.type == 'custom_func':
@@ -1500,7 +1500,7 @@ def file_interpreter(syntax_tree, console_index, input_string, path):
         #save variable to document
         elif element.type == 'save_file':
             #get variable
-            var = search_vars(current_scope, element.var.token)
+            var = search_vars(current_scope, element.var.token, element.line)
             #prepare variable to save
             if var.type == 'str' or var.type == 'bool':
                 value = var.value

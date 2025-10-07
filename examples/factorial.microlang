@@ -1,5 +1,5 @@
 #create factorial function
-func factorial [ flt value ] -> flt
+func factorial [ int value ] -> int
 {
     #get out clause
     if ( value == 1 ) then 
@@ -9,11 +9,11 @@ func factorial [ flt value ] -> flt
     else
     {
         #get value to use for next loop
-        make flt x = value - 1
+        make int x = value - 1
         #run factorial function for next lower number
-        make flt y = factorial [ x ]
+        make int y = factorial [ x ]
         #multiply inputted number with the factorial
-        make flt z = value * y
+        make int z = value * y
         return z
     }
 }
@@ -35,7 +35,7 @@ if ( number > 100 ) then
 else
 {
     #run factorial function
-    make flt finalFactorial = factorial [ number ]
+    make int finalFactorial = factorial [ number ]
     #display factorial
     display finalFactorial
 }

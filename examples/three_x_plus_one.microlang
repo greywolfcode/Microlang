@@ -10,14 +10,14 @@ while ( x > 1 ) do
     make int d_by_two = x % 2
     if ( d_by_two == 0 ) then
     {
-        x = x / 2
+        x = 0.5 * x
     }
     else
     {
-        x = ( 3 * x ) + 1
+        x = 1 + ( 3 * x )
     }
     display x
-    count = count + 1
+    count = 1 + count
 }
 #display stopping time
 display 'Stopping time: '

@@ -8,7 +8,7 @@ func __init__ [ ] -> void
 
 
 #simple addition function
-func add [ flt a , flt b ] -> flt
+func add [ int a , int b ] -> flt
 {
     make flt c = a +  b
     return c
