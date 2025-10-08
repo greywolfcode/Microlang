@@ -1,2 +1,6 @@
-#print to console
+#print string to console
 display 'Hello, World!'
+
+#print variable to console
+make int a = 9
+display a
