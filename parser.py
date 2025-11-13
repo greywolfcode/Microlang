@@ -284,7 +284,7 @@ def file_parser(tokens, console_index, input_string, path):
                         elif presedence[current_token.token] > presedence[operator_stack[-1].token]:
                             operator_stack.append(current_token)
                             break
-                        #check if equal and right associative -> only ** is right associative in this console
+                        #check if equal and right associative -> only ** is right associative in this language
                         elif current_token.token == '**' and operator_stack[-1].token == '**':
                             operator_stack.append(current_token)
                             break
