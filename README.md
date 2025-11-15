@@ -4,26 +4,26 @@ A small scripting language written in Python
 - Python3
 - Python standard library
 ## Setup 
-Clone the repository 
+Clone the repository and have python installed.
 ## Usage
-Run the main file with your source file as an argument. Note that the path needs to be a full path or relative to your installation of the interpreter files.
+Run the main file, then enter the path to your .microlang source file. Note that the path needs to be a full path or relative to your installation of the interpreter files.
 ## Syntax
 ```python3
-#print statement
+#print string to console
 display 'Hi!'
 
-#make a variable
-make int a = 0
+#make a variable of type float
+make flt a = 0
 
-#basic function
+#basic function that returns an int
 func basicFunc [ int b ] -> int
 {
-  make flt c = b * 2
+  make int c = b * 2
   return c
 }
 
 #call the function
-make int c = basicFunc [ a ]
+make int d = basicFunc [ a ]
 
 #if statements
 if ( a < 2 )
