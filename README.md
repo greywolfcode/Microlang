@@ -6,7 +6,7 @@ A small scripting language written in Python
 ## Setup 
 Clone the repository and have python installed.
 ## Usage
-Run the main file, then enter the path to your .microlang source file. Note that the path needs to be a full path or relative to your installation of the interpreter files.
+Run main.py, then enter the path to your .microlang source file. Note that the path needs to be a full path or relative to your installation of the interpreter files.
 ## Syntax
 ```python3
 #print string to console
@@ -39,4 +39,4 @@ else
   display 'a equals 2'
 }
 ```
-See the tutorial folder for all syntax tutorials.
+See the [tutorial](https://github.com/greywolfcode/Microlang/tree/main/tutorial) folder for all syntax tutorials.
